@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "torrent_client",
+    "torrent_lib",
+]
