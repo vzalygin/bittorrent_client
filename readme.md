@@ -1,6 +1,6 @@
-# Torrent client written in Rust
+# BitTorrent client written in Rust
 
-## todo
+## TODO
 
 - [ ] parsing .torrent files
 - [ ] getting data by bittorrent protocol
