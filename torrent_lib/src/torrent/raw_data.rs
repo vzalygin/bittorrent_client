@@ -1,8 +1,7 @@
 use serde_derive::Deserialize;
 
-// Не нашёл по спецификации информацию об этом
-// #[derive(Debug, Deserialize)]
-// pub struct Node(String, u64);
+#[derive(Debug, Deserialize)]
+pub struct Node(String, u64);
 
 #[derive(Debug, Deserialize)]
 pub struct File {
@@ -15,7 +14,8 @@ pub struct File {
 #[derive(Debug, Deserialize)]
 pub struct RawInfo {
     pub name: String,
-    pub pieces: String,
+    #[serde(with = "serde_bytes")]
+    pub pieces: Vec<u8>,
     #[serde(rename = "piece length")]
     pub piece_length: u64,
     #[serde(default)]
@@ -38,9 +38,8 @@ pub struct RawTorrent {
     pub info: RawInfo,
     #[serde(default)]
     pub announce: Option<String>,
-    // Не нашёл по спецификации, что это такое
-    // #[serde(default)]
-    // pub nodes: Option<Vec<Node>>,
+    #[serde(default)]
+    pub nodes: Option<Vec<Node>>,
     #[serde(default)]
     pub encoding: Option<String>,
     #[serde(default)]
@@ -50,7 +49,7 @@ pub struct RawTorrent {
     pub announce_list: Option<Vec<Vec<String>>>,
     #[serde(default)]
     #[serde(rename = "creation date")]
-    pub creation_date: Option<i64>,
+    pub creation_date: Option<u64>,
     #[serde(rename = "comment")]
     pub comment: Option<String>,
     #[serde(default)]

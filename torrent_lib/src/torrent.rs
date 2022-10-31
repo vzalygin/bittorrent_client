@@ -1,7 +1,7 @@
 mod raw_data;
 
-use raw_data::{File, RawInfo, RawTorrent};
-use serde_bencode::{de, Error};
+use raw_data::{File, RawInfo, RawTorrent, Node};
+use serde_bencode::Error;
 
 #[derive(Debug)]
 pub struct SingleFileMode {
@@ -17,28 +17,28 @@ pub struct MultiplyFileMode {
 }
 
 #[derive(Debug)]
-pub enum FileType {
+pub enum Files {
     Single(SingleFileMode),
     Multiply(MultiplyFileMode),
 }
 
 #[derive(Debug)]
 pub struct Info {
-    pub pieces: String,
     pub piece_length: u64,
+    pub pieces: Vec<u8>,
     pub private: Option<u8>,
-    pub files: FileType,
+    pub files: Files,
 }
 
 #[derive(Debug)]
 pub struct Torrent {
     pub info: Info,
     pub announce: Option<String>,
-    // nodes: Option<Vec<Node>>,
+    pub nodes: Option<Vec<Node>>,
     pub encoding: Option<String>,
     pub httpseeds: Option<Vec<String>>,
     pub announce_list: Option<Vec<Vec<String>>>,
-    pub creation_date: Option<i64>,
+    pub creation_date: Option<u64>,
     pub comment: Option<String>,
     pub created_by: Option<String>,
 }
@@ -56,6 +56,7 @@ impl TryInto<Torrent> for RawTorrent {
             creation_date: self.creation_date,
             comment: self.comment,
             created_by: self.created_by,
+            nodes: self.nodes,
         })
     }
 }
@@ -68,16 +69,18 @@ impl TryInto<Info> for RawInfo {
         let is_multy = self.files.is_some();
 
         if is_single == is_multy {
-            Err(Error::UnknownVariant("Invalid fields".to_string()))
+            Err(Error::UnknownVariant(
+                "Parsing error: info have signs of multy and sigle file both".to_string(),
+            ))
         } else {
             let files = if is_single {
-                FileType::Single(SingleFileMode {
+                Files::Single(SingleFileMode {
                     name: self.name,
                     length: self.length.unwrap(),
                     md5sum: self.md5sum,
                 })
             } else {
-                FileType::Multiply(MultiplyFileMode {
+                Files::Multiply(MultiplyFileMode {
                     base_name: self.name,
                     files: self.files.unwrap(),
                 })
@@ -89,10 +92,10 @@ impl TryInto<Info> for RawInfo {
                 private: self.private,
                 files,
             })
-        } 
+        }
     }
 }
 
 pub fn parse_torrent_from_bytes(input: &[u8]) -> Result<Torrent, Error> {
-    de::from_bytes::<RawTorrent>(input)?.try_into()
+    serde_bencode::de::from_bytes::<RawTorrent>(input)?.try_into()
 }
