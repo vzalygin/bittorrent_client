@@ -3,22 +3,26 @@ mod raw_data;
 use raw_data::{File, RawInfo, RawTorrent};
 use serde_bencode::{de, Error};
 
+#[derive(Debug)]
 pub struct SingleFileMode {
     pub name: String,
     pub length: u64,
     pub md5sum: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct MultiplyFileMode {
     pub base_name: String,
     pub files: Vec<File>,
 }
 
+#[derive(Debug)]
 pub enum FileType {
     Single(SingleFileMode),
     Multiply(MultiplyFileMode),
 }
 
+#[derive(Debug)]
 pub struct Info {
     pub pieces: String,
     pub piece_length: u64,
@@ -26,6 +30,7 @@ pub struct Info {
     pub files: FileType,
 }
 
+#[derive(Debug)]
 pub struct Torrent {
     pub info: Info,
     pub announce: Option<String>,
