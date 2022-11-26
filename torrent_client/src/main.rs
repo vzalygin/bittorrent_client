@@ -1,6 +1,29 @@
+mod torrent;
 
-use std::fs;
-use torrent_lib::torrent::{parse_torrent_from_bytes, Torrent, Files};
+use std::error::Error;
+
+use torrent::{parse_torrent_from_bytes, Files, Torrent};
+
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
+
+type AsyncErr = Box<dyn std::error::Error + Send + Sync>;
+
+#[tokio::main]
+async fn main() -> Result<(), AsyncErr> {
+    let path = "C:/repos/bittorrent_client/1.torrent";
+
+    let mut f = File::open(path).await?;
+    let mut buf: Vec<u8> = vec![];
+
+    f.read_to_end(&mut buf).await?;
+
+    let torrent = parse_torrent_from_bytes(&buf[..])?;
+
+    render_torrent(&torrent);
+
+    Ok(())
+}
 
 fn render_torrent(torrent: &Torrent) {
     println!("announce:\t{:?}", torrent.announce);
@@ -28,19 +51,5 @@ fn render_torrent(torrent: &Torrent) {
         println!("file path:\t{:?}", e.name);
         println!("file length:\t{}", e.length);
         println!("file md5sum:\t{:?}", e.md5sum);
-    }
-}
-
-fn main() {
-    let r = fs::read("D:\\repos\\torrent_client\\doom-eternal.torrent");
-
-    match r {
-        Ok(bytes) => {
-            match parse_torrent_from_bytes(&bytes) {
-                Ok(t) => render_torrent(&t),
-                Err(e) => println!("Parsing err: {}", e.to_string())
-            }
-        }
-        Err(e) => println!("Read err: {}", e),
     }
 }
