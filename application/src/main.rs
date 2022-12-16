@@ -1,7 +1,5 @@
 mod torrent;
 
-use std::error::Error;
-
 use torrent::{parse_torrent_from_bytes, Files, Torrent};
 
 use tokio::fs::File;
@@ -11,7 +9,7 @@ type AsyncErr = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
-    let path = "C:/repos/bittorrent_client/1.torrent";
+    let path = "./1.torrent";
 
     let mut f = File::open(path).await?;
     let mut buf: Vec<u8> = vec![];
