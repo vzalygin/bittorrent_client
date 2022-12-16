@@ -5,7 +5,7 @@ use nom::{
     character::{complete::char, is_digit},
     combinator::map_res,
     error::{Error as Err, ErrorKind},
-    sequence::{preceded, tuple, delimited},
+    sequence::{preceded, tuple, delimited, pair},
     Err::Error,
     IResult, branch::alt, multi::many0,
 };
@@ -14,7 +14,12 @@ enum Node {
     Integer(i64),
     String(String), 
     List(Vec<Node>),
-    Dict(HashMap<String, Node>, Vec<u8>) // Нужно ссылаться на кусок байтов, чтобы потом можно было взять от них хеш
+    Dict(HashMap<String, Node>, Vec<u8>) // Подумать, можно ли как-то обойтись без тупого копирования, причём неоднократно
+}
+
+#[inline(always)]
+fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
+    alt((parse_string, parse_number, parse_list))(inp)
 }
 
 fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
@@ -39,12 +44,17 @@ fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
 fn parse_minus(inp: &[u8]) -> IResult<&[u8], bool> {
     // Достаточно тупо, но работает...
     let (inp, r) = take_while(|c| c == b'-')(inp)?;
+
     Ok((inp, r.len() == 1))
 }
 
 fn parse_number(inp: &[u8]) -> IResult<&[u8], Node> {
-    let (inp, (_, minus, r, _)) = tuple((char('i'), parse_minus, parse_digits, char('e')))(inp)?;
+    let (inp, (_, minus, r, _)) = tuple(
+        (char('i'), parse_minus, parse_digits, char('e'))
+    )(inp)?;
+
     let number = if minus { -(r as i64) } else { r as i64 };
+
     Ok((inp, Node::Integer(number)))
 }
 
@@ -60,16 +70,37 @@ fn parse_string(inp: &[u8]) -> IResult<&[u8], Node> {
 }
 
 fn parse_list(inp: &[u8]) -> IResult<&[u8], Node> {
-    let parse_nodes = alt((parse_string, parse_number, parse_list)); 
 
     map_res(
-        delimited(char('l'), many0(parse_nodes), char('e')),
+        delimited(char('l'), many0(parse_node), char('e')),
         |list| { Result::<Node, ()>::Ok(Node::List(list)) }
     )(inp) 
 }
 
 fn parse_dict(inp: &[u8]) -> IResult<&[u8], Node> {
-    
+    let parse_pair = pair(parse_string, parse_node);
+
+    let (new_inp, dict) = map_res(
+        delimited(char('d'), many0(parse_pair), char('e')),
+        |pairs| {
+            let mut dict = HashMap::<String, Node>::new();
+            for (key, value) in pairs {
+                if let Node::String(s) = key {
+                    dict.insert(s, value);
+                } else {
+                    return Result::<_, ()>::Err(());
+                }
+            }
+            Result::<_, ()>::Ok(dict)
+        }
+    )(inp)?;
+
+    Ok((new_inp, 
+        Node::Dict(
+            dict, 
+            inp[0..(inp.len()-new_inp.len())].to_vec()
+        )
+    ))
 }
 
 #[cfg(test)]
