@@ -7,6 +7,7 @@ use nom::{
     IResult,
 };
 
+#[derive(Debug)]
 enum Node {
     Integer(i32),
 }
