@@ -11,7 +11,7 @@ use nom::{
 };
 
 #[derive(Debug)]
-enum Node {
+pub enum Node {
     Integer(i64),
     String(String), 
     List(Vec<Node>),
@@ -19,7 +19,7 @@ enum Node {
 }
 
 #[inline(always)]
-fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
+pub fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
     alt((parse_string, parse_number, parse_list))(inp)
 }
 
