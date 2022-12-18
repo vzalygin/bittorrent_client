@@ -13,6 +13,18 @@ pub enum Node<'a> {
     Dict(HashMap<&'a [u8], Node<'a>>, &'a [u8]), // Также храним кусок, в котором этот словарь размещён, чтобы взять хеш от инфо-словарика
 }
 
+impl<'a> TryInto<i64> for Node<'a> {
+    type Error = ParsingError;
+
+    fn try_into(self) -> Result<i64, Self::Error> {
+        if let Node::Integer(i) = self {
+            Ok(i)
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
 impl<'a> TryInto<String> for Node<'a> {
     type Error = ParsingError;
 
@@ -30,26 +42,17 @@ impl<'a> TryInto<String> for Node<'a> {
     }
 }
 
-impl<'a> TryInto<i64> for Node<'a> {
+impl<'a, T> TryInto<Vec<T>> for Node<'a>
+where
+    T: TryFrom<Node<'a>, Error = ParsingError>,
+{
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<i64, Self::Error> {
-        if let Node::Integer(i) = self {
-            Ok(i)
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
-    }
-}
-
-impl<'a, Element: TryFrom<Node<'a>>> TryInto<Vec<Element>> for Node<'a> {
-    type Error = ParsingError;
-
-    fn try_into(self) -> Result<Vec<Element>, Self::Error> {
+    fn try_into(self) -> Result<Vec<T>, Self::Error> {
         if let Node::List(list) = self {
-            let new_list: Vec<Element> = vec![];
+            let mut new_list: Vec<T> = vec![];
             for node in list {
-                let r = Element::try_from(node);
+                new_list.push(node.try_into()?);
             }
             Ok(new_list)
         } else {
@@ -58,41 +61,25 @@ impl<'a, Element: TryFrom<Node<'a>>> TryInto<Vec<Element>> for Node<'a> {
     }
 }
 
-// impl<'a> TryFrom<Node<'a>> for i64 {
-//     type Error = ParsingError;
+impl<'a> TryInto<Torrent> for Node<'a> {
+    type Error = ParsingError;
 
-//     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-//         if let Node::Integer(i) = value {
-//             Ok(i)
-//         } else {
-//             Err(ParsingError::TypeMismatch)
-//         }
-//     }
-// }
-
-// impl<'a> TryInto<Torrent> for Node<'a> {
-//     type Error = ParsingError;
-
-//     fn try_into(self) -> Result<Torrent, Self::Error> {
-//         if let Node::Dict(dict, _) = self {
-//             Ok(Torrent {
-//                 announce: get(dict, b"announce")?.try_into(),
-//                 info: todo!(),
-//                 nodes: todo!(),
-//                 encoding: todo!(),
-//                 httpseeds: todo!(),
-//                 announce_list: todo!(),
-//                 creation_date: todo!(),
-//                 comment: todo!(),
-//                 created_by: todo!(),
-//             })
-//         } else {
-//             Err(ParsingError::TypeMismatch)
-//         }
-//     }
-// }
-
-// /// Возвращает
-// fn get<'a>(dict: HashMap<&'a [u8], Node<'a>>, key: &'a [u8]) -> Result<Node<'a>, ParsingError> {
-//     if let Some()
-// }
+    fn try_into(self) -> Result<Torrent, Self::Error> {
+        if let Node::Dict(dict, _) = self {
+            // Ok(Torrent {
+            //     info: (),
+            //     announce: (),
+            //     nodes: (),
+            //     encoding: (),
+            //     httpseeds: (),
+            //     announce_list: (),
+            //     creation_date: (),
+            //     comment: (),
+            //     created_by: (),
+            // })
+            unimplemented!()
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
