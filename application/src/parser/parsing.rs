@@ -20,7 +20,7 @@ pub enum Node {
 
 #[inline(always)]
 pub fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
-    alt((parse_string, parse_number, parse_list))(inp)
+    alt((parse_string, parse_number, parse_list, parse_dict))(inp)
 }
 
 fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
@@ -71,7 +71,6 @@ fn parse_string(inp: &[u8]) -> IResult<&[u8], Node> {
 }
 
 fn parse_list(inp: &[u8]) -> IResult<&[u8], Node> {
-
     map_res(
         delimited(char('l'), many0(parse_node), char('e')),
         |list| { Result::<Node, ()>::Ok(Node::List(list)) }
@@ -79,21 +78,23 @@ fn parse_list(inp: &[u8]) -> IResult<&[u8], Node> {
 }
 
 fn parse_dict(inp: &[u8]) -> IResult<&[u8], Node> {
+    let PairsToDict = |pairs: Vec<(Node, Node)>| -> Result<_, ()> {
+        let mut dict = HashMap::<String, Node>::new();
+        for (key, value) in pairs {
+            if let Node::String(s) = key {
+                dict.insert(s, value);
+            } else {
+                return Result::<_, ()>::Err(());
+            }
+        }
+        Result::<_, ()>::Ok(dict)
+    };
+
     let parse_pair = pair(parse_string, parse_node);
 
     let (new_inp, dict) = map_res(
         delimited(char('d'), many0(parse_pair), char('e')),
-        |pairs| {
-            let mut dict = HashMap::<String, Node>::new();
-            for (key, value) in pairs {
-                if let Node::String(s) = key {
-                    dict.insert(s, value);
-                } else {
-                    return Result::<_, ()>::Err(());
-                }
-            }
-            Result::<_, ()>::Ok(dict)
-        }
+        PairsToDict
     )(inp)?;
 
     Ok((new_inp, 

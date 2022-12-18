@@ -1,13 +1,14 @@
 mod common_types;
 mod parser;
 
+use common_types::{
+    error::AsyncErr,
+    files::{Files, Torrent},
+};
 use parser::parse_from_bytes;
-use common_types::files::{Torrent, Files};
 
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-
-type AsyncErr = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
@@ -17,14 +18,9 @@ async fn main() -> Result<(), AsyncErr> {
     let mut buf: Vec<u8> = vec![];
 
     f.read_to_end(&mut buf).await?;
-    
-    let torrent = parse_from_bytes(&buf[..]);
-    if let Ok(torrent) = torrent {
-        render_torrent(&torrent);
-    } else {
-        println!("something went wrong");
-    }
-    
+
+    let torrent = parse_from_bytes(&buf[..])?;
+    render_torrent(&torrent);
 
     Ok(())
 }

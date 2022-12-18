@@ -1,9 +1,9 @@
 mod parsing;
 
-use crate::common_types::{
-    files::Torrent,
-    errors::ParsingError,
-};
+pub mod error;
+
+use crate::common_types::{files::Torrent};
+use error::ParsingError;
 
 use self::parsing::parse_node;
 
