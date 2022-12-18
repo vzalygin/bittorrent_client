@@ -14,8 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/chechout@v3
+      name: Checkout
+    
     - uses: actions/cache@v3
-      name: Cache dependencies
+      name: Restore dependencies
       with:
         path: |
           ~/.cargo/bin/
@@ -25,7 +28,6 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     
-    - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
       
