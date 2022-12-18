@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
+// TODO: Сделать более подробные ошибки
 #[derive(Debug, Clone)]
 pub enum ParsingError {
     MissingFields,
-    InvalidFormat,
+    InvalidFormat, 
+    TypeMismatch, 
 }
 
 impl Display for ParsingError {
@@ -12,6 +14,7 @@ impl Display for ParsingError {
             match self {
                 ParsingError::MissingFields => "MissingFields",
                 ParsingError::InvalidFormat => "InvalidFormat",
+                ParsingError::TypeMismatch => "TypeMismatch"
         })
     }
 }

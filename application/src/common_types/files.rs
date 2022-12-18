@@ -33,7 +33,7 @@ pub struct Info {
 
 pub struct Torrent {
     pub info: Info,
-    pub announce: Option<String>,
+    pub announce: String,
     pub nodes: Option<Vec<Node>>,
     pub encoding: Option<String>,
     pub httpseeds: Option<Vec<String>>,

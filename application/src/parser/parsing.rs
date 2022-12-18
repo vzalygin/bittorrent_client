@@ -10,14 +10,7 @@ use nom::{
     IResult, branch::alt, multi::{many0, many_m_n},
 };
 
-/// Структура, которая размечает байты, передаваемые на парсинг.
-#[derive(Debug, PartialEq)]
-pub enum Node<'a> {
-    Integer(i64),
-    String(&'a [u8]), 
-    List(Vec<Node<'a>>),
-    Dict(HashMap<&'a [u8], Node<'a>>, &'a [u8]) // Также храним кусок, в котором этот словарь размещён, чтобы взять хеш от инфо-словарика
-}
+use super::node::Node;
 
 #[inline(always)]
 pub fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
