@@ -7,15 +7,16 @@ use nom::{
     error::{Error as Err, ErrorKind},
     sequence::{preceded, tuple, delimited, pair},
     Err::Error,
-    IResult, branch::alt, multi::many0,
+    IResult, branch::alt, multi::{many0, many_m_n},
 };
 
-#[derive(Debug)]
-pub enum Node {
+/// Структура, которая размечает байты, передаваемые на парсинг.
+#[derive(Debug, PartialEq)]
+pub enum Node<'a> {
     Integer(i64),
-    String(String), 
-    List(Vec<Node>),
-    Dict(HashMap<String, Node>, Vec<u8>) // Подумать, можно ли как-то обойтись без тупого копирования, причём неоднократно
+    String(&'a [u8]), 
+    List(Vec<Node<'a>>),
+    Dict(HashMap<&'a [u8], Node<'a>>, &'a [u8]) // Также храним кусок, в котором этот словарь размещён, чтобы взять хеш от инфо-словарика
 }
 
 #[inline(always)]
@@ -43,9 +44,8 @@ fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
 }
 
 fn parse_minus(inp: &[u8]) -> IResult<&[u8], bool> {
-    // Достаточно тупо, но работает...
-    let (inp, r) = take_while(|c| c == b'-')(inp)?;
-
+    let (inp, r) = many_m_n(0, 1, char('-'))(inp)?;
+    
     Ok((inp, r.len() == 1))
 }
 
@@ -62,10 +62,7 @@ fn parse_number(inp: &[u8]) -> IResult<&[u8], Node> {
 fn parse_string(inp: &[u8]) -> IResult<&[u8], Node> {
     let (inp, length) = parse_digits(inp)?;
 
-    let (inp, s) = map_res(
-        preceded(char(':'), take(length)), 
-        |s: &[u8]| String::from_utf8(s.to_vec())
-    )(inp)?;
+    let (inp, s) = preceded(char(':'), take(length))(inp)?;
 
     Ok((inp, Node::String(s)))
 }
@@ -77,101 +74,31 @@ fn parse_list(inp: &[u8]) -> IResult<&[u8], Node> {
     )(inp) 
 }
 
-fn parse_dict(inp: &[u8]) -> IResult<&[u8], Node> {
-    let PairsToDict = |pairs: Vec<(Node, Node)>| -> Result<_, ()> {
-        let mut dict = HashMap::<String, Node>::new();
+fn parse_dict<'a>(inp: &'a [u8]) -> IResult<&[u8], Node> {
+    let pairs_to_dict = 
+        |pairs: Vec<(Node<'a>, Node<'a>)>| -> Result<HashMap::<&'a [u8], Node<'a>>, ()> {
+        let mut dict = HashMap::new();
         for (key, value) in pairs {
             if let Node::String(s) = key {
                 dict.insert(s, value);
             } else {
-                return Result::<_, ()>::Err(());
+                return Result::Err(());
             }
         }
-        Result::<_, ()>::Ok(dict)
+        Result::Ok(dict)
     };
 
     let parse_pair = pair(parse_string, parse_node);
 
     let (new_inp, dict) = map_res(
         delimited(char('d'), many0(parse_pair), char('e')),
-        PairsToDict
+        pairs_to_dict
     )(inp)?;
 
     Ok((new_inp, 
         Node::Dict(
             dict, 
-            inp[0..(inp.len()-new_inp.len())].to_vec()
+            &inp[0..(inp.len()-new_inp.len())]
         )
     ))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_a_pos_num() {
-        let inp = b"i42e";
-
-        let res = parse_number(inp);
-
-        assert!(res.is_ok());
-        if let (_, Node::Integer(num)) = res.unwrap() {
-            assert_eq!(42, num);
-        } else {
-            assert!(false);
-        }
-    }
-
-    #[test]
-    fn parse_a_neg_num() {
-        let inp = b"i-42e";
-
-        let res = parse_number(inp);
-
-        assert!(res.is_ok());
-        if let (_, Node::Integer(num)) = res.unwrap() {
-            assert_eq!(-42, num);
-        } else {
-            assert!(false);
-        }
-    }
-
-    #[test]
-    fn parse_not_a_num() {
-        let inp = b"ie";
-
-        let res = parse_number(inp);
-
-        assert!(res.is_err())
-    }
-
-    #[test]
-    fn parse_str() {
-        let inp = b"4:spami3e";
-
-        let res = parse_string(inp);
-
-        assert!(res.is_ok());
-        let (next, s) = res.unwrap();
-        
-        if let Node::String(s) = s {
-            assert_eq!("spam", s);
-        }
-        assert_eq!(b"i3e", next);
-    }
-
-    #[test]
-    fn parse_empty_str() {
-        let inp = b"0:lol";
-
-        let res = parse_string(inp);
-
-        assert!(res.is_ok());
-        let (next, s) = res.unwrap();
-        if let Node::String(s) = s {
-            assert_eq!("", s);
-        }
-        assert_eq!(b"lol", next);
-    }
 }
