@@ -25,6 +25,18 @@ async fn main() -> Result<(), AsyncErr> {
 }
 
 fn render_torrent(torrent: &Torrent) {
+    if let Files::Multiple(e) = &torrent.info.files {
+        println!("file base:\t{:?}", e.base_name);
+        for f in &e.files {
+            println!("file path:\t{:?}", f.path);
+            println!("file length:\t{}", f.length);
+            println!("file md5sum:\t{:?}", f.md5sum);
+        }
+    } else if let Files::Single(e) = &torrent.info.files {
+        println!("file path:\t{:?}", e.name);
+        println!("file length:\t{}", e.length);
+        println!("file md5sum:\t{:?}", e.md5sum);
+    }
     println!("announce:\t{:?}", torrent.announce);
     if let Some(al) = &torrent.announce_list {
         for a in al {
@@ -39,16 +51,4 @@ fn render_torrent(torrent: &Torrent) {
     println!("piece length:\t{:?}", torrent.info.piece_length);
     println!("private:\t{:?}", torrent.info.private);
     println!("hash:\t{:?}", torrent.info.hash);
-    if let Files::Multiple(e) = &torrent.info.files {
-        println!("file base:\t{:?}", e.base_name);
-        // for f in &e.files {
-        //     println!("file path:\t{:?}", f.path);
-        //     println!("file length:\t{}", f.length);
-        //     println!("file md5sum:\t{:?}", f.md5sum);
-        // }
-    } else if let Files::Single(e) = &torrent.info.files {
-        println!("file path:\t{:?}", e.name);
-        println!("file length:\t{}", e.length);
-        println!("file md5sum:\t{:?}", e.md5sum);
-    }
 }
