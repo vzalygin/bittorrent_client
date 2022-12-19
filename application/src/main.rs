@@ -38,13 +38,14 @@ fn render_torrent(torrent: &Torrent) {
     println!("encoding:\t{:?}", torrent.encoding);
     println!("piece length:\t{:?}", torrent.info.piece_length);
     println!("private:\t{:?}", torrent.info.private);
+    println!("hash:\t{:?}", torrent.info.hash);
     if let Files::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
-        for f in &e.files {
-            println!("file path:\t{:?}", f.path);
-            println!("file length:\t{}", f.length);
-            println!("file md5sum:\t{:?}", f.md5sum);
-        }
+        // for f in &e.files {
+        //     println!("file path:\t{:?}", f.path);
+        //     println!("file length:\t{}", f.length);
+        //     println!("file md5sum:\t{:?}", f.md5sum);
+        // }
     } else if let Files::Single(e) = &torrent.info.files {
         println!("file path:\t{:?}", e.name);
         println!("file length:\t{}", e.length);
