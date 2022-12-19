@@ -20,7 +20,6 @@ async fn main() -> Result<(), AsyncErr> {
 
     let torrent: Torrent = buf[..].try_into()?;
     render_torrent(&torrent);
-
     Ok(())
 }
 
