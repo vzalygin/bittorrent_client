@@ -1,9 +1,10 @@
 [package]
 name = "application"
-version = "0.1"
+version = "0.1.0"
 edition = "2021"
-authors = "Vyacheslav Zalygin"
+authors = ["Vyacheslav Zalygin vya.zalygin@gmail.com"]
 description = "A BitTorent client"
+repository = "https://github.com/vzalygin/bittorrent_client"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
