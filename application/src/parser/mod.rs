@@ -10,12 +10,16 @@ use crate::common_types::files::Torrent;
 use error::ParsingError;
 use parsing::{parse_node};
 
-pub fn parse_from_bytes<'a>(bytes: &'a [u8]) -> Result<Torrent, ParsingError> {
-    let node = parse_node(bytes);
+impl TryInto<Torrent> for &[u8] {
+    type Error = ParsingError;
 
-    if let Ok((_, node)) = node {
-        node.try_into()
-    } else {
-        Err(ParsingError::InvalidFormat)
+    fn try_into(self) -> Result<Torrent, Self::Error> {
+        let node = parse_node(self);
+
+        if let Ok((_, node)) = node {
+            node.try_into()
+        } else {
+            Err(ParsingError::InvalidFormat)
+        }
     }
 }

@@ -1,5 +1,4 @@
-use super::parsing::{parse_node};
-use super::node::Node;
+use super::{node::Node, parsing::{parse_node}};
 
 #[test]
 fn parse_a_pos_num() {

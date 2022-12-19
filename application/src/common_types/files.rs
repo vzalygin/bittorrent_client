@@ -1,6 +1,3 @@
-#[derive(Debug)]
-pub struct Node(String, u64);
-
 pub struct File {
     pub path: Vec<String>,
     pub length: u64,
@@ -13,20 +10,20 @@ pub struct SingleFileMode {
     pub md5sum: Option<String>,
 }
 
-pub struct MultiplyFileMode {
+pub struct MultipleFileMode {
     pub base_name: String,
     pub files: Vec<File>,
 }
 
 pub enum Files {
     Single(SingleFileMode),
-    Multiply(MultiplyFileMode),
+    Multiple(MultipleFileMode),
 }
 
 pub struct Info {
     pub piece_length: u64,
     pub pieces: Vec<u8>,
-    pub private: Option<u8>,
+    pub private: Option<u64>,
     pub files: Files,
     pub hash: [u8; 20],
 }
@@ -34,7 +31,6 @@ pub struct Info {
 pub struct Torrent {
     pub info: Info,
     pub announce: String,
-    pub nodes: Option<Vec<Node>>,
     pub encoding: Option<String>,
     pub httpseeds: Option<Vec<String>>,
     pub announce_list: Option<Vec<Vec<String>>>,

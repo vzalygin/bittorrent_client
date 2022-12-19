@@ -5,7 +5,6 @@ use common_types::{
     error::AsyncErr,
     files::{Files, Torrent},
 };
-use parser::parse_from_bytes;
 
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -19,7 +18,7 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent = parse_from_bytes(&buf[..])?;
+    let torrent: Torrent = buf[..].try_into()?;
     render_torrent(&torrent);
 
     Ok(())
@@ -27,7 +26,6 @@ async fn main() -> Result<(), AsyncErr> {
 
 fn render_torrent(torrent: &Torrent) {
     println!("announce:\t{:?}", torrent.announce);
-    println!("nodes:\t\t{:?}", torrent.nodes);
     if let Some(al) = &torrent.announce_list {
         for a in al {
             println!("announce list:\t{}", a[0]);
@@ -40,7 +38,7 @@ fn render_torrent(torrent: &Torrent) {
     println!("encoding:\t{:?}", torrent.encoding);
     println!("piece length:\t{:?}", torrent.info.piece_length);
     println!("private:\t{:?}", torrent.info.private);
-    if let Files::Multiply(e) = &torrent.info.files {
+    if let Files::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
         for f in &e.files {
             println!("file path:\t{:?}", f.path);
