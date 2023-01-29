@@ -1,3 +1,5 @@
+mod consts;
+
 use std::{collections::HashMap, vec};
 
 use sha1::{Digest, Sha1};
@@ -9,6 +11,8 @@ use crate::{
     },
     io::repo::{Id, TorrentRepo, WithId},
 };
+
+use self::consts::{PATH, LENGTH, MD5SUM, NAME, FILES, PIECE_LENGTH, PIECES, PRIVATE, INFO, ANNOUNCE, ENCODING, HTTPSEEDS, ANNOUNCE_LIST, CREATION_DATE, COMMENT, CREATED_BY, VALUE, ID, DATA, TORRENTS};
 
 use super::error::ParsingError;
 
@@ -99,9 +103,9 @@ impl<'a> TryFrom<Node<'a>> for File {
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
             Ok(File {
-                path: required(b"path", &dict)?,
-                length: required(b"length", &dict)?,
-                md5sum: optional(b"", &dict)?,
+                path: required(PATH, &dict)?,
+                length: required(LENGTH, &dict)?,
+                md5sum: optional(MD5SUM, &dict)?,
             })
         } else {
             Err(ParsingError::TypeMismatch)
@@ -119,20 +123,20 @@ impl<'a> TryFrom<Node<'a>> for Info {
 
             let files = {
                 let single =
-                    dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"length" as &[u8]);
+                    dict.contains_key(NAME as &[u8]) && dict.contains_key(b"length" as &[u8]);
                 let multi =
-                    dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"files" as &[u8]);
+                    dict.contains_key(NAME as &[u8]) && dict.contains_key(b"files" as &[u8]);
 
                 if single && !multi {
                     Files::Single(SingleFileMode {
-                        name: required(b"name", &dict)?,
-                        length: required(b"length", &dict)?,
-                        md5sum: optional(b"md5sum", &dict)?,
+                        name: required(NAME, &dict)?,
+                        length: required(LENGTH, &dict)?,
+                        md5sum: optional(MD5SUM, &dict)?,
                     })
                 } else if !single && multi {
                     Files::Multiple(MultipleFileMode {
-                        base_name: required(b"name", &dict)?,
-                        files: required(b"files", &dict)?,
+                        base_name: required(NAME, &dict)?,
+                        files: required(FILES, &dict)?,
                     })
                 } else {
                     return Err(ParsingError::InvalidFormat);
@@ -140,9 +144,9 @@ impl<'a> TryFrom<Node<'a>> for Info {
             };
 
             Ok(Info {
-                piece_length: required(b"piece length", &dict)?,
-                pieces: required(b"pieces", &dict)?,
-                private: optional(b"private", &dict)?,
+                piece_length: required(PIECE_LENGTH, &dict)?,
+                pieces: required(PIECES, &dict)?,
+                private: optional(PRIVATE, &dict)?,
                 files,
                 hash: hasher.finalize().into(),
             })
@@ -158,14 +162,14 @@ impl<'a> TryFrom<Node<'a>> for TorrentFile {
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
             Ok(TorrentFile {
-                info: required(b"info", &dict)?,
-                announce: required(b"announce", &dict)?,
-                encoding: optional(b"encoding", &dict)?,
-                httpseeds: optional(b"httpseeds", &dict)?,
-                announce_list: optional(b"announce-list", &dict)?,
-                creation_date: optional(b"creation date", &dict)?,
-                comment: optional(b"comment", &dict)?,
-                created_by: optional(b"created by", &dict)?,
+                info: required(INFO, &dict)?,
+                announce: required(ANNOUNCE, &dict)?,
+                encoding: optional(ENCODING, &dict)?,
+                httpseeds: optional(HTTPSEEDS, &dict)?,
+                announce_list: optional(ANNOUNCE_LIST, &dict)?,
+                creation_date: optional(CREATION_DATE, &dict)?,
+                comment: optional(COMMENT, &dict)?,
+                created_by: optional(CREATED_BY, &dict)?,
             })
         } else {
             Err(ParsingError::TypeMismatch)
@@ -179,7 +183,7 @@ impl<'a> TryFrom<Node<'a>> for Torrent {
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
             Ok(Torrent {
-                data: required(b"data", &dict)?,
+                data: required(DATA, &dict)?,
             })
         } else {
             Err(ParsingError::TypeMismatch)
@@ -197,7 +201,7 @@ where
         if let Node::Dict(dict, _) = value {
             let value: T = {
                 // По неясным причинам борроу чекер не вывозит проверку без инлайна
-                let key: &[u8] = b"value";
+                let key: &[u8] = VALUE;
                 let dict = &dict;
                 if let Some(node) = dict.get(key) {
                     node.clone().try_into()
@@ -207,7 +211,7 @@ where
                     ))
                 }
             }?;
-            let id: Id = required(b"id", &dict)?;
+            let id: Id = required(ID, &dict)?;
 
             Ok(WithId { value, id })
         } else {
@@ -239,7 +243,7 @@ impl<'a> TryFrom<Node<'a>> for TorrentRepo {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
-            Ok(TorrentRepo::from(required(b"torrents", &dict)?))
+            Ok(TorrentRepo::from(required(TORRENTS, &dict)?))
         } else {
             Err(ParsingError::TypeMismatch)
         }
