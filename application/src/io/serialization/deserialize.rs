@@ -1,5 +1,3 @@
-mod consts;
-
 use std::{collections::HashMap, vec};
 
 use sha1::{Digest, Sha1};
@@ -12,18 +10,16 @@ use crate::{
     io::repo::{Id, TorrentRepo, WithId},
 };
 
-use self::consts::{PATH, LENGTH, MD5SUM, NAME, FILES, PIECE_LENGTH, PIECES, PRIVATE, INFO, ANNOUNCE, ENCODING, HTTPSEEDS, ANNOUNCE_LIST, CREATION_DATE, COMMENT, CREATED_BY, VALUE, ID, DATA, TORRENTS};
+use super::{
+    consts::{
+        ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES,
+        HTTPSEEDS, ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS,
+        VALUE,
+    },
+    node::Node,
+};
 
 use super::error::ParsingError;
-
-/// Структура, которая размечает байты, передаваемые на парсинг.
-#[derive(Debug, PartialEq, Clone)]
-pub enum Node<'a> {
-    Integer(i64),
-    String(&'a [u8]),
-    List(Vec<Node<'a>>),
-    Dict(HashMap<&'a [u8], Node<'a>>, &'a [u8]), // Также храним кусок, в котором этот словарь размещён, чтобы взять хеш от инфо-словарика
-}
 
 impl<'a> TryFrom<Node<'a>> for i64 {
     type Error = ParsingError;

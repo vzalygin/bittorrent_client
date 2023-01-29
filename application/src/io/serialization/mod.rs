@@ -1,7 +1,10 @@
 pub mod error;
 
+mod consts;
+mod deserialize;
 mod node;
 mod parsing;
+mod serialize;
 
 #[cfg(test)]
 mod tests;
@@ -12,11 +15,11 @@ use parsing::parse_node;
 
 use super::repo::TorrentRepo;
 
-impl TryInto<TorrentFile> for &[u8] {
+impl TryFrom<&[u8]> for TorrentFile {
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<TorrentFile, Self::Error> {
-        let node = parse_node(self);
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let node = parse_node(value);
 
         if let Ok((_, node)) = node {
             node.try_into()
@@ -26,11 +29,11 @@ impl TryInto<TorrentFile> for &[u8] {
     }
 }
 
-impl TryInto<TorrentRepo> for &[u8] {
+impl TryFrom<&[u8]> for TorrentRepo {
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<TorrentRepo, Self::Error> {
-        let node = parse_node(self);
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let node = parse_node(value);
 
         if let Ok((_, node)) = node {
             node.try_into()

@@ -64,8 +64,12 @@ impl TorrentRepo {
     }
 
     pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
-        let file = tokio::fs::read(path).await?;
-        unimplemented!()
+        let file = &tokio::fs::read(path).await?;
+
+        match file[..].try_into() {
+            Ok(repo) => Ok(repo),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 
     pub fn from(torrents: Vec<WithId<Torrent>>) -> TorrentRepo {
