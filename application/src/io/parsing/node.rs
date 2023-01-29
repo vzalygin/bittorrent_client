@@ -1,14 +1,9 @@
 use std::{collections::HashMap, vec};
 
-use sha1::{Sha1, Digest};
+use sha1::{Digest, Sha1};
 
 use crate::common_types::files::{
-    Torrent, 
-    Info, 
-    Files, 
-    SingleFileMode, 
-    MultipleFileMode, 
-    File
+    File, Files, Info, MultipleFileMode, SingleFileMode, TorrentFile,
 };
 
 use super::error::ParsingError;
@@ -76,7 +71,8 @@ impl<'a> TryFrom<Node<'a>> for String {
 }
 
 impl<'a, T> TryFrom<Node<'a>> for Vec<T>
-where T: TryFrom<Node<'a>, Error = ParsingError>,
+where
+    T: TryFrom<Node<'a>, Error = ParsingError>,
 {
     type Error = ParsingError;
 
@@ -118,22 +114,24 @@ impl<'a> TryFrom<Node<'a>> for Info {
             hasher.update(raw);
 
             let files = {
-                let single = dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"length" as &[u8]);
-                let multi = dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"files" as &[u8]);
+                let single =
+                    dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"length" as &[u8]);
+                let multi =
+                    dict.contains_key(b"name" as &[u8]) && dict.contains_key(b"files" as &[u8]);
 
-                if single && !multi{
+                if single && !multi {
                     Files::Single(SingleFileMode {
                         name: required(b"name", &dict)?,
                         length: required(b"length", &dict)?,
                         md5sum: optional(b"md5sum", &dict)?,
                     })
                 } else if !single && multi {
-                    Files::Multiple(MultipleFileMode{
+                    Files::Multiple(MultipleFileMode {
                         base_name: required(b"name", &dict)?,
                         files: required(b"files", &dict)?,
                     })
                 } else {
-                    return Err(ParsingError::InvalidFormat)
+                    return Err(ParsingError::InvalidFormat);
                 }
             };
 
@@ -150,12 +148,12 @@ impl<'a> TryFrom<Node<'a>> for Info {
     }
 }
 
-impl<'a> TryInto<Torrent> for Node<'a> {
+impl<'a> TryInto<TorrentFile> for Node<'a> {
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<Torrent, Self::Error> {
+    fn try_into(self) -> Result<TorrentFile, Self::Error> {
         if let Node::Dict(dict, _) = self {
-            Ok(Torrent {
+            Ok(TorrentFile {
                 info: required(b"info", &dict)?,
                 announce: required(b"announce", &dict)?,
                 encoding: optional(b"encoding", &dict)?,
@@ -171,18 +169,25 @@ impl<'a> TryInto<Torrent> for Node<'a> {
     }
 }
 
-fn required<'a, T>(key: &[u8], dict: &'a HashMap<&[u8], Node<'a>>) -> Result<T, ParsingError> 
-where T: TryFrom<Node<'a>, Error = ParsingError>
+fn required<'a, T>(key: &[u8], dict: &'a HashMap<&[u8], Node<'a>>) -> Result<T, ParsingError>
+where
+    T: TryFrom<Node<'a>, Error = ParsingError>,
 {
     if let Some(node) = dict.get(key) {
         node.clone().try_into()
     } else {
-        Err(ParsingError::MissingField(String::from_utf8(key.to_vec()).unwrap()))
+        Err(ParsingError::MissingField(
+            String::from_utf8(key.to_vec()).unwrap(),
+        ))
     }
 }
 
-fn optional<'a, T>(key: &[u8], dict: &'a HashMap<&[u8], Node<'a>>) -> Result<Option<T>, ParsingError>
-where T: TryFrom<Node<'a>, Error = ParsingError>
+fn optional<'a, T>(
+    key: &[u8],
+    dict: &'a HashMap<&[u8], Node<'a>>,
+) -> Result<Option<T>, ParsingError>
+where
+    T: TryFrom<Node<'a>, Error = ParsingError>,
 {
     if let Some(node) = dict.get(key) {
         Ok(Some(node.clone().try_into()?))
