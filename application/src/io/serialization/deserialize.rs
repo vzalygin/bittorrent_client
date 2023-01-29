@@ -21,23 +21,11 @@ use super::{
 
 use super::error::ParsingError;
 
-// impl<'a> TryFrom<Node<'a>> for i64 {
-//     type Error = ParsingError;
-
-//     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-//         if let Node::Integer(i) = value {
-//             Ok(i)
-//         } else {
-//             Err(ParsingError::TypeMismatch)
-//         }
-//     }
-// }
-
 impl<'a> TryFrom<Node<'a>> for u64 {
     type Error = ParsingError;
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Integer(i) = value {
+        if let Node::UnsignedNum(i) = value {
             Ok(i as u64)
         } else {
             Err(ParsingError::TypeMismatch)

@@ -41,7 +41,7 @@ fn parse_digits(inp: &[u8]) -> IResult<&[u8], u64> {
 fn parse_number(inp: &[u8]) -> IResult<&[u8], Node> {
     let (inp, (_, number, _)) = tuple((char('i'), parse_digits, char('e')))(inp)?;
 
-    Ok((inp, Node::Integer(number)))
+    Ok((inp, Node::UnsignedNum(number)))
 }
 
 fn parse_string(inp: &[u8]) -> IResult<&[u8], Node> {

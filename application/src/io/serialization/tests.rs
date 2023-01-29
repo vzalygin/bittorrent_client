@@ -7,7 +7,7 @@ fn parse_a_pos_num() {
     let res = parse_node(inp);
 
     assert!(res.is_ok());
-    if let (_, Node::Integer(num)) = res.unwrap() {
+    if let (_, Node::UnsignedNum(num)) = res.unwrap() {
         assert_eq!(42, num);
     } else {
         assert!(false)
@@ -80,7 +80,7 @@ fn parse_list() {
     let (next, list) = res.unwrap();
     if let Node::List(list) = list {
         assert_eq!(Node::String(b"spam"), list[0]);
-        assert_eq!(Node::Integer(42), list[1]);
+        assert_eq!(Node::UnsignedNum(42), list[1]);
     } else {
         assert!(false)
     }
@@ -114,7 +114,7 @@ fn parse_dict() {
     if let Node::Dict(dict, raw) = dict {
         assert_eq!(b"d4:spami42e5:hello3:lole", raw);
         assert_eq!(2, dict.len());
-        assert_eq!(Node::Integer(42), dict[b"spam" as &[u8]]);
+        assert_eq!(Node::UnsignedNum(42), dict[b"spam" as &[u8]]);
         assert_eq!(Node::String(b"lol"), dict[b"hello" as &[u8]]);
     } else {
         assert!(false)
