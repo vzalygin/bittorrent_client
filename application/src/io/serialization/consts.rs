@@ -1,6 +1,6 @@
 /// The constats for parsing. Don't change to maintain backward compability.
 
-// Spec constants
+// Specification constants
 pub const PATH: &[u8; 4] = b"path";
 pub const LENGTH: &[u8; 6] = b"length";
 pub const MD5SUM: &[u8; 6] = b"md5sum";
@@ -18,7 +18,7 @@ pub const CREATION_DATE: &[u8; 13] = b"creation date";
 pub const COMMENT: &[u8; 7] = b"comment";
 pub const CREATED_BY: &[u8; 10] = b"created by";
 
-// Private constants
+// Repo constants
 pub const DATA: &[u8; 4] = b"data";
 pub const VALUE: &[u8; 5] = b"value";
 pub const ID: &[u8; 2] = b"id";

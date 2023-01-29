@@ -14,19 +14,19 @@ fn parse_a_pos_num() {
     }
 }
 
-#[test]
-fn parse_a_neg_num() {
-    let inp = b"i-42e";
+// #[test]
+// fn parse_a_neg_num() {
+//     let inp = b"i-42e";
 
-    let res = parse_node(inp);
+//     let res = parse_node(inp);
 
-    assert!(res.is_ok());
-    if let (_, Node::Integer(num)) = res.unwrap() {
-        assert_eq!(-42, num);
-    } else {
-        assert!(false)
-    }
-}
+//     assert!(res.is_ok());
+//     if let (_, Node::Integer(num)) = res.unwrap() {
+//         assert_eq!(-42, num);
+//     } else {
+//         assert!(false)
+//     }
+// }
 
 #[test]
 fn parse_not_a_num() {

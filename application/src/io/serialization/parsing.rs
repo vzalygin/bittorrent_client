@@ -6,7 +6,7 @@ use nom::{
     character::{complete::char, is_digit},
     combinator::map_res,
     error::{Error as Err, ErrorKind},
-    multi::{many0, many_m_n},
+    multi::many0,
     sequence::{delimited, pair, preceded, tuple},
     Err::Error,
     IResult,
@@ -19,14 +19,14 @@ pub fn parse_node(inp: &[u8]) -> IResult<&[u8], Node> {
     alt((parse_string, parse_number, parse_list, parse_dict))(inp)
 }
 
-fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
+fn parse_digits(inp: &[u8]) -> IResult<&[u8], u64> {
     let (inp, r) = take_while(is_digit)(inp)?;
 
     if r.len() != 0 {
         let mut digits = 0;
         for b in r {
             digits *= 10;
-            digits += (b - b'0') as u32;
+            digits += (b - b'0') as u64;
         }
 
         Ok((inp, digits))
@@ -38,16 +38,8 @@ fn parse_digits(inp: &[u8]) -> IResult<&[u8], u32> {
     }
 }
 
-fn parse_minus(inp: &[u8]) -> IResult<&[u8], bool> {
-    let (inp, r) = many_m_n(0, 1, char('-'))(inp)?;
-
-    Ok((inp, r.len() == 1))
-}
-
 fn parse_number(inp: &[u8]) -> IResult<&[u8], Node> {
-    let (inp, (_, minus, r, _)) = tuple((char('i'), parse_minus, parse_digits, char('e')))(inp)?;
-
-    let number = if minus { -(r as i64) } else { r as i64 };
+    let (inp, (_, number, _)) = tuple((char('i'), parse_digits, char('e')))(inp)?;
 
     Ok((inp, Node::Integer(number)))
 }
