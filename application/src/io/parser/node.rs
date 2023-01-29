@@ -2,8 +2,12 @@ use std::{collections::HashMap, vec};
 
 use sha1::{Digest, Sha1};
 
-use crate::common_types::files::{
-    File, Files, Info, MultipleFileMode, SingleFileMode, TorrentFile,
+use crate::{
+    common_types::{
+        data::Torrent,
+        files::{File, Files, Info, MultipleFileMode, SingleFileMode, TorrentFile},
+    },
+    io::repo::{Id, TorrentRepo, WithId},
 };
 
 use super::error::ParsingError;
@@ -148,11 +152,11 @@ impl<'a> TryFrom<Node<'a>> for Info {
     }
 }
 
-impl<'a> TryInto<TorrentFile> for Node<'a> {
+impl<'a> TryFrom<Node<'a>> for TorrentFile {
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<TorrentFile, Self::Error> {
-        if let Node::Dict(dict, _) = self {
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
             Ok(TorrentFile {
                 info: required(b"info", &dict)?,
                 announce: required(b"announce", &dict)?,
@@ -163,6 +167,79 @@ impl<'a> TryInto<TorrentFile> for Node<'a> {
                 comment: optional(b"comment", &dict)?,
                 created_by: optional(b"created by", &dict)?,
             })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
+impl<'a> TryFrom<Node<'a>> for Torrent {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
+            Ok(Torrent {
+                data: required(b"data", &dict)?,
+            })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
+impl<'a, T> TryFrom<Node<'a>> for WithId<T>
+where
+    T: TryFrom<Node<'a>, Error = ParsingError>,
+{
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
+            let value: T = {
+                // По неясным причинам борроу чекер не вывозит проверку без инлайна
+                let key: &[u8] = b"value";
+                let dict = &dict;
+                if let Some(node) = dict.get(key) {
+                    node.clone().try_into()
+                } else {
+                    Err(ParsingError::MissingField(
+                        String::from_utf8(key.to_vec()).unwrap(),
+                    ))
+                }
+            }?;
+            let id: Id = required(b"id", &dict)?;
+
+            Ok(WithId { value, id })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
+impl<'a> TryFrom<Node<'a>> for Id {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::String(s) = value {
+            if s.len() == 16 {
+                let s = s[0..16].to_vec();
+
+                Ok(Id::from_bytes(s.try_into().unwrap()))
+            } else {
+                Err(ParsingError::InvalidFormat)
+            }
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
+impl<'a> TryFrom<Node<'a>> for TorrentRepo {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
+            Ok(TorrentRepo::from(required(b"torrents", &dict)?))
         } else {
             Err(ParsingError::TypeMismatch)
         }
