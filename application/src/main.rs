@@ -1,9 +1,9 @@
 mod common_types;
-mod parser;
+mod io;
 
 use common_types::{
     error::AsyncErr,
-    files::{Files, Torrent},
+    files::{Files, TorrentFile},
 };
 
 use tokio::fs::File;
@@ -18,12 +18,12 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent: Torrent = buf[..].try_into()?;
+    let torrent: TorrentFile = buf[..].try_into()?;
     render_torrent(&torrent);
     Ok(())
 }
 
-fn render_torrent(torrent: &Torrent) {
+fn render_torrent(torrent: &TorrentFile) {
     if let Files::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
         for f in &e.files {

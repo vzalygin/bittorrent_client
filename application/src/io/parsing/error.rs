@@ -4,18 +4,21 @@ use std::fmt::Display;
 #[derive(Debug, Clone)]
 pub enum ParsingError {
     MissingField(String),
-    InvalidFormat, 
-    TypeMismatch, 
+    InvalidFormat,
+    TypeMismatch,
 }
 
 impl Display for ParsingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Parsing error: {}", 
+        writeln!(
+            f,
+            "Parsing error: {}",
             match self {
                 ParsingError::MissingField(s) => format!("MissingField: {s}"),
                 ParsingError::InvalidFormat => "InvalidFormat".to_string(),
-                ParsingError::TypeMismatch => "TypeMismatch".to_string()
-        })
+                ParsingError::TypeMismatch => "TypeMismatch".to_string(),
+            }
+        )
     }
 }
 

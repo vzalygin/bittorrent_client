@@ -28,7 +28,7 @@ pub struct Info {
     pub hash: [u8; 20],
 }
 
-pub struct Torrent {
+pub struct TorrentFile {
     pub info: Info,
     pub announce: String,
     pub encoding: Option<String>,

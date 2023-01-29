@@ -1,4 +1,4 @@
-use super::{node::Node, parsing::{parse_node}};
+use super::{node::Node, parsing::parse_node};
 
 #[test]
 fn parse_a_pos_num() {
@@ -116,7 +116,9 @@ fn parse_dict() {
         assert_eq!(2, dict.len());
         assert_eq!(Node::Integer(42), dict[b"spam" as &[u8]]);
         assert_eq!(Node::String(b"lol"), dict[b"hello" as &[u8]]);
-    } else { assert!(false) }
+    } else {
+        assert!(false)
+    }
     assert_eq!(b"lol", next);
 }
 
@@ -131,6 +133,8 @@ fn parse_empty_dict() {
     if let Node::Dict(dict, raw) = dict {
         assert_eq!(b"de", raw);
         assert_eq!(0, dict.len());
-    } else { assert!(false) }
+    } else {
+        assert!(false)
+    }
     assert_eq!(b"lol", next);
 }

@@ -1,19 +1,19 @@
 pub mod error;
 
-mod parsing;
 mod node;
+mod parsing;
 
 #[cfg(test)]
 mod tests;
 
-use crate::common_types::files::Torrent;
+use crate::common_types::files::TorrentFile;
 use error::ParsingError;
-use parsing::{parse_node};
+use parsing::parse_node;
 
-impl TryInto<Torrent> for &[u8] {
+impl TryInto<TorrentFile> for &[u8] {
     type Error = ParsingError;
 
-    fn try_into(self) -> Result<Torrent, Self::Error> {
+    fn try_into(self) -> Result<TorrentFile, Self::Error> {
         let node = parse_node(self);
 
         if let Ok((_, node)) = node {
