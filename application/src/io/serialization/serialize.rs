@@ -60,39 +60,70 @@ where
     }
 }
 
-impl SerializeTo<Vec<u8>> for HashMap<&[u8], Box<dyn SerializeTo<Vec<u8>>>> {
-    fn serialize_to(&self) -> Vec<u8> {
-        let mut res = vec![];
-        res.push(b'd');
-        for (k, v) in self {
-            res.extend(k.iter());
-            res.extend(v.serialize_to());
-        }
-        res.push(b'e');
-        res
-    }
+// impl SerializeTo<Vec<u8>> for HashMap<&[u8], Box<dyn SerializeTo<Vec<u8>>>> {
+//     fn serialize_to(&self) -> Vec<u8> {
+//         let mut res = vec![];
+//         res.push(b'd');
+//         for (k, v) in self {
+//             res.extend(k.iter());
+//             res.extend(v.serialize_to());
+//         }
+//         res.push(b'e');
+//         res
+//     }
+// }
+
+// fn add_required_field<'a: 'b, 'b, T>(
+//     // Можно удобно выводить длинные типы
+//     dict: &'b mut HashMap<&'a [u8], Box<dyn SerializeTo<Vec<u8>>>>,
+//     k: &'a [u8],
+//     v: &'a T,
+// ) where T: SerializeTo<Vec<u8>> {
+//     let v = (*v);
+//     let v: Box<dyn SerializeTo<Vec<u8>>> = Box::new(v);
+//     dict.insert(k, v);
+// }
+
+struct BencodeDictBuilder {
+    data: Vec<u8>,
 }
 
-fn add_required_field<'a: 'b, 'b, T>(
-    // Можно удобно выводить длинные типы
-    dict: &'b mut HashMap<&'a [u8], Box<dyn SerializeTo<Vec<u8>>>>,
-    k: &'a [u8],
-    v: &'a T,
-) where T: SerializeTo<Vec<u8>> {
-    let v = (*v);
-    let v: Box<dyn SerializeTo<Vec<u8>>> = Box::new(v);
-    dict.insert(k, v);
+impl BencodeDictBuilder {
+    fn new() -> BencodeDictBuilder {
+        BencodeDictBuilder { data: vec![b'd'] }
+    }
+
+    fn required<T>(self, k: &[u8], v: T) -> BencodeDictBuilder
+    where T: SerializeTo<Vec<u8>> {
+        let mut data = self.data;
+        data.extend_from_slice(k);
+        data.extend(v.serialize_to().into_iter());
+        BencodeDictBuilder { data }
+    }
+
+    fn optional<T>(self, k: &[u8], v: Option<T>) -> BencodeDictBuilder
+    where T: SerializeTo<Vec<u8>> {
+        if let Some(v) = v {
+            self.required(k, v)
+        } else {
+            self
+        }
+    }
+
+    fn fin(self) -> Vec<u8> {
+        let mut data = self.data;
+        data.push(b'e');
+        data
+    }
 }
 
 impl SerializeTo<Vec<u8>> for File {
     fn serialize_to(&self) -> Vec<u8> {
-        let mut d = HashMap::new();
-
-        add_required_field(&mut d, PATH, &self.path);
-        add_required_field(&mut d, LENGTH, &self.length);
-        // add_optional_field(&mut d, MD5SUM, Box::new(self.md5sum));
-
-        d.serialize_to()
+        BencodeDictBuilder::new()
+            .required(PATH, self.path.clone())
+            .required(LENGTH, self.length)
+            .optional(MD5SUM, self.md5sum.clone())
+            .fin()
     }
 }
 
