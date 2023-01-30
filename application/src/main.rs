@@ -2,10 +2,11 @@ mod common_types;
 mod io;
 
 use common_types::{
+    data::Torrent,
     error::AsyncErr,
-    files::{Files, TorrentFile}, data::Torrent,
+    files::Files,
 };
-use io::serialization::{serialize::SerializeTo, make_torrent_from_bytes};
+use io::serialization::{make_torrent_from_bytes, serialize::SerializeTo};
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};

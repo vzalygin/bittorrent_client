@@ -7,7 +7,10 @@ use crate::{
         data::Torrent,
         files::{File, Files, Info, SingleFileMode, TorrentFile},
     },
-    io::{repo::{TorrentRepo, WithId}, serialization::deserialize_torrent_repo},
+    io::{
+        repo::{TorrentRepo, WithId},
+        serialization::deserialize_torrent_repo,
+    },
 };
 
 use super::{node::Node, parsing::parse_node, serialize::SerializeTo};
@@ -206,36 +209,43 @@ fn serialize_file() {
     assert_eq!(data, new);
 }
 
+// #[test]
+// fn serialize_info() {
+//     let data: &[u8] = b"";
+// }
+
 fn generate_repo_object() -> TorrentRepo {
-    TorrentRepo::from(vec![WithId {
-        id: Uuid::new_v4(),
-        value: Torrent {
-            data: TorrentFile {
-                info: Info {
-                    piece_length: 256,
-                    pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
-                    private: Some(1),
-                    files: Files::Single(SingleFileMode {
-                        name: "1".to_string(),
-                        length: 16,
-                        md5sum: None,
-                    }),
+    TorrentRepo {
+        torrents: vec![WithId {
+            id: Uuid::new_v4(),
+            value: Torrent {
+                data: TorrentFile {
+                    info: Info {
+                        piece_length: 256,
+                        pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
+                        private: Some(1),
+                        files: Files::Single(SingleFileMode {
+                            name: "1".to_string(),
+                            length: 16,
+                            md5sum: None,
+                        }),
+                    },
+                    announce: "TEST".to_string(),
+                    encoding: None,
+                    httpseeds: None,
+                    announce_list: Some(vec![vec!["TEST1".to_string(), "TEST2".to_string()]]),
+                    creation_date: Some(123),
+                    comment: Some("FOOBAR".to_string()),
+                    created_by: Some("Zalygin".to_string()),
                 },
-                announce: "TEST".to_string(),
-                encoding: None,
-                httpseeds: None,
-                announce_list: Some(vec![vec!["TEST1".to_string(), "TEST2".to_string()]]),
-                creation_date: Some(123),
-                comment: Some("FOOBAR".to_string()),
-                created_by: Some("Zalygin".to_string()),
+                hash: *b"12345678901234567890",
             },
-            hash: *b"12345678901234567890",
-        },
-    }])
+        }],
+    }
 }
 
 #[test]
-fn serialize_single_file_torrent() {
+fn serialize_repo() {
     let repo = generate_repo_object();
 
     let bytes = &repo.serialize()[..];

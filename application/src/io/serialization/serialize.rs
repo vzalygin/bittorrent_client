@@ -10,7 +10,7 @@ use crate::{
 
 use super::consts::{
     ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES, HTTPSEEDS,
-    ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS, VALUE,
+    ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS, VALUE, HASH,
 };
 
 pub trait SerializeTo<T> {
@@ -148,6 +148,7 @@ impl SerializeTo<Vec<u8>> for Torrent {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(DATA, self.data.clone())
+            .required(HASH, self.hash.to_vec())
             .fin()
     }
 }

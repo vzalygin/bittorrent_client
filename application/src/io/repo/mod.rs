@@ -19,7 +19,7 @@ where
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TorrentRepo {
-    torrents: Vec<WithId<Torrent>>,
+    pub torrents: Vec<WithId<Torrent>>,
 }
 
 impl TorrentRepo {
@@ -77,9 +77,5 @@ impl TorrentRepo {
             Ok(repo) => Ok(repo),
             Err(e) => Err(Box::new(e)),
         }
-    }
-
-    pub fn from(torrents: Vec<WithId<Torrent>>) -> TorrentRepo {
-        TorrentRepo { torrents }
     }
 }

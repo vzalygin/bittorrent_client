@@ -9,11 +9,11 @@ mod parsing;
 #[cfg(test)]
 mod tests;
 
-use crate::common_types::{files::TorrentFile, data::Torrent};
+use self::{consts::INFO, node::Node};
+use crate::common_types::{data::Torrent, files::TorrentFile};
 use error::ParsingError;
 use parsing::parse_node;
-use sha1::{Sha1, Digest};
-use self::{node::Node, consts::INFO};
+use sha1::{Digest, Sha1};
 
 use super::repo::TorrentRepo;
 
@@ -31,7 +31,7 @@ pub fn make_torrent_from_bytes(bytes: &[u8]) -> Result<Torrent, ParsingError> {
 }
 
 fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
-    if let Node::Dict(dict, w) = node {
+    if let Node::Dict(dict, _) = node {
         if let Some(v) = dict.get(INFO) {
             if let Node::Dict(_, raw) = node {
                 let mut hasher = Sha1::new();

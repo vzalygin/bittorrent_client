@@ -1,7 +1,5 @@
 use std::{collections::HashMap, fmt::Debug, vec};
 
-use sha1::{Digest, Sha1};
-
 use crate::{
     common_types::{
         data::Torrent,
@@ -12,9 +10,9 @@ use crate::{
 
 use super::{
     consts::{
-        ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES,
+        ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES, HASH,
         HTTPSEEDS, ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS,
-        VALUE, HASH,
+        VALUE,
     },
     node::Node,
 };
@@ -101,12 +99,10 @@ impl<'a> TryFrom<Node<'a>> for Info {
     type Error = ParsingError;
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, raw) = value {
+        if let Node::Dict(dict, _) = value {
             let files = {
-                let single =
-                    dict.contains_key(NAME as &[u8]) && dict.contains_key(b"length" as &[u8]);
-                let multi =
-                    dict.contains_key(NAME as &[u8]) && dict.contains_key(b"files" as &[u8]);
+                let single = dict.contains_key(b"length" as &[u8]);
+                let multi = dict.contains_key(b"files" as &[u8]);
 
                 if single && !multi {
                     Files::Single(SingleFileMode {
@@ -226,7 +222,9 @@ impl<'a> TryFrom<Node<'a>> for TorrentRepo {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
-            Ok(TorrentRepo::from(required(TORRENTS, &dict)?))
+            Ok(TorrentRepo { 
+                torrents: required(TORRENTS, &dict)?
+            })
         } else {
             Err(ParsingError::TypeMismatch)
         }
