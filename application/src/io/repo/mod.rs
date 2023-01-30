@@ -6,11 +6,16 @@ use crate::common_types::{data::Torrent, error::AsyncErr};
 
 pub type Id = Uuid;
 
-pub struct WithId<T> {
+#[derive(Clone)]
+pub struct WithId<T>
+where
+    T: Clone,
+{
     pub id: Id,
     pub value: T,
 }
 
+#[derive(Clone)]
 pub struct TorrentRepo {
     torrents: Vec<WithId<Torrent>>,
 }

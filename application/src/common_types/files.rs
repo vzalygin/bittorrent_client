@@ -1,25 +1,30 @@
+#[derive(Clone)]
 pub struct File {
     pub path: Vec<String>,
     pub length: u64,
     pub md5sum: Option<String>,
 }
 
+#[derive(Clone)]
 pub struct SingleFileMode {
     pub name: String,
     pub length: u64,
     pub md5sum: Option<String>,
 }
 
+#[derive(Clone)]
 pub struct MultipleFileMode {
     pub base_name: String,
     pub files: Vec<File>,
 }
 
+#[derive(Clone)]
 pub enum Files {
     Single(SingleFileMode),
     Multiple(MultipleFileMode),
 }
 
+#[derive(Clone)]
 pub struct Info {
     pub piece_length: u64,
     pub pieces: Vec<u8>,
@@ -28,6 +33,7 @@ pub struct Info {
     pub hash: [u8; 20],
 }
 
+#[derive(Clone)]
 pub struct TorrentFile {
     pub info: Info,
     pub announce: String,

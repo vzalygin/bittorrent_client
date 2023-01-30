@@ -177,7 +177,7 @@ impl<'a> TryFrom<Node<'a>> for Torrent {
 
 impl<'a, T> TryFrom<Node<'a>> for WithId<T>
 where
-    T: TryFrom<Node<'a>, Error = ParsingError>,
+    T: TryFrom<Node<'a>, Error = ParsingError> + Clone,
 {
     type Error = ParsingError;
 
