@@ -10,11 +10,11 @@ use crate::{
 
 use super::consts::{
     ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES, HTTPSEEDS,
-    ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, VALUE, TORRENTS,
+    ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS, VALUE,
 };
 
 pub trait SerializeTo<T> {
-    fn serialize_to(&self) -> T;
+    fn serialize(&self) -> T;
 }
 
 struct BencodeDictBuilder {
@@ -31,8 +31,8 @@ impl BencodeDictBuilder {
         T: SerializeTo<Vec<u8>>,
     {
         let mut data = self.data;
-        data.extend_from_slice(k);
-        data.extend(v.serialize_to().into_iter());
+        data.extend(k.to_vec().serialize());
+        data.extend(v.serialize().into_iter());
         BencodeDictBuilder { data }
     }
 
@@ -55,7 +55,7 @@ impl BencodeDictBuilder {
 }
 
 impl SerializeTo<Vec<u8>> for u64 {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         let value = self.to_string();
 
         let mut res = vec![b'i'];
@@ -66,7 +66,7 @@ impl SerializeTo<Vec<u8>> for u64 {
 }
 
 impl SerializeTo<Vec<u8>> for Vec<u8> {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         let mut res = vec![];
         let len = self.len().to_string();
 
@@ -79,8 +79,8 @@ impl SerializeTo<Vec<u8>> for Vec<u8> {
 }
 
 impl SerializeTo<Vec<u8>> for String {
-    fn serialize_to(&self) -> Vec<u8> {
-        self.as_bytes().to_vec().serialize_to()
+    fn serialize(&self) -> Vec<u8> {
+        self.as_bytes().to_vec().serialize()
     }
 }
 
@@ -88,19 +88,21 @@ impl<T> SerializeTo<Vec<u8>> for Vec<T>
 where
     T: SerializeTo<Vec<u8>>,
 {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         let mut res = vec![];
 
+        res.push(b'l');
         for t in self.into_iter() {
-            res.extend(t.serialize_to());
+            res.extend(t.serialize());
         }
+        res.push(b'e');
 
         res
     }
 }
 
 impl SerializeTo<Vec<u8>> for File {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(PATH, self.path.clone())
             .required(LENGTH, self.length)
@@ -110,7 +112,7 @@ impl SerializeTo<Vec<u8>> for File {
 }
 
 impl SerializeTo<Vec<u8>> for Info {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         match &self.files {
             Files::Single(file) => BencodeDictBuilder::new()
                 .required(NAME, file.name.clone())
@@ -128,7 +130,7 @@ impl SerializeTo<Vec<u8>> for Info {
 }
 
 impl SerializeTo<Vec<u8>> for TorrentFile {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(INFO, self.info.clone())
             .required(ANNOUNCE, self.announce.clone())
@@ -143,7 +145,7 @@ impl SerializeTo<Vec<u8>> for TorrentFile {
 }
 
 impl SerializeTo<Vec<u8>> for Torrent {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(DATA, self.data.clone())
             .fin()
@@ -151,8 +153,8 @@ impl SerializeTo<Vec<u8>> for Torrent {
 }
 
 impl SerializeTo<Vec<u8>> for Id {
-    fn serialize_to(&self) -> Vec<u8> {
-        self.as_bytes().to_vec().serialize_to()
+    fn serialize(&self) -> Vec<u8> {
+        self.as_bytes().to_vec().serialize()
     }
 }
 
@@ -160,7 +162,7 @@ impl<T> SerializeTo<Vec<u8>> for WithId<T>
 where
     T: SerializeTo<Vec<u8>> + Clone + PartialEq + Debug,
 {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         let e = self.clone();
         BencodeDictBuilder::new()
             .required(VALUE, e.value)
@@ -170,7 +172,7 @@ where
 }
 
 impl SerializeTo<Vec<u8>> for TorrentRepo {
-    fn serialize_to(&self) -> Vec<u8> {
+    fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(TORRENTS, self.get_torrent_list().clone())
             .fin()

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, vec, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, vec};
 
 use sha1::{Digest, Sha1};
 
@@ -14,7 +14,7 @@ use super::{
     consts::{
         ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES,
         HTTPSEEDS, ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS,
-        VALUE,
+        VALUE, HASH,
     },
     node::Node,
 };
@@ -102,8 +102,8 @@ impl<'a> TryFrom<Node<'a>> for Info {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, raw) = value {
-            let mut hasher = Sha1::new();
-            hasher.update(raw);
+            // let mut hasher = Sha1::new();
+            // hasher.update(raw);
 
             let files = {
                 let single =
@@ -132,7 +132,7 @@ impl<'a> TryFrom<Node<'a>> for Info {
                 pieces: required(PIECES, &dict)?,
                 private: optional(PRIVATE, &dict)?,
                 files,
-                hash: hasher.finalize().into(),
+                // hash: hasher.finalize().into(),
             })
         } else {
             Err(ParsingError::TypeMismatch)
@@ -166,8 +166,11 @@ impl<'a> TryFrom<Node<'a>> for Torrent {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
+            let hash: Vec<u8> = required(HASH, &dict)?; // Копилятор без подсказки не смог в двойной вывод типов.
+
             Ok(Torrent {
                 data: required(DATA, &dict)?,
+                hash: hash.try_into().unwrap(),
             })
         } else {
             Err(ParsingError::TypeMismatch)

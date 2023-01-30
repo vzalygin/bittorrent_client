@@ -5,13 +5,14 @@ use common_types::{
     error::AsyncErr,
     files::{Files, TorrentFile},
 };
+use io::serialization::serialize::SerializeTo;
 
-use tokio::fs::File;
 use tokio::io::AsyncReadExt;
+use tokio::{fs::File, io::AsyncWriteExt};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
-    let path = "./1.torrent";
+    let path = "./temp.torrent";
 
     let mut f = File::open(path).await?;
     let mut buf: Vec<u8> = vec![];
@@ -20,6 +21,11 @@ async fn main() -> Result<(), AsyncErr> {
 
     let torrent = TorrentFile::try_from(&buf[..])?;
     render_torrent(&torrent);
+
+    let e = torrent.serialize();
+    let mut f1 = File::create("./temp.torrent").await?;
+    f1.write(&e[..]).await?;
+
     Ok(())
 }
 

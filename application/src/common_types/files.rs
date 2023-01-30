@@ -30,7 +30,6 @@ pub struct Info {
     pub pieces: Vec<u8>,
     pub private: Option<u64>,
     pub files: Files,
-    pub hash: [u8; 20],
 }
 
 #[derive(Debug, Clone, PartialEq)]

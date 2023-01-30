@@ -1,10 +1,10 @@
 pub mod error;
+pub mod serialize;
 
 mod consts;
 mod deserialize;
 mod node;
 mod parsing;
-mod serialize;
 
 #[cfg(test)]
 mod tests;

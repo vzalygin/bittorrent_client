@@ -3,7 +3,7 @@ name = "application"
 version = "0.1.0"
 edition = "2021"
 authors = ["Vyacheslav Zalygin vya.zalygin@gmail.com"]
-description = "A BitTorent client"
+description = "A BitTorrent client"
 repository = "https://github.com/vzalygin/bittorrent_client"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,13 +11,6 @@ repository = "https://github.com/vzalygin/bittorrent_client"
 [dependencies]
 nom = "7.1"
 sha1 = "0.10"
-tokio = { version = "1", features = ["full"] }
 hyper = "0.14"
-
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-]
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1.2.2", features = ["v4", "fast-rng", "macro-diagnostics"] }

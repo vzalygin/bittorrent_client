@@ -1,4 +1,4 @@
-use std::{path::Path, fmt::Debug};
+use std::{fmt::Debug, path::Path};
 
 use uuid::Uuid;
 
@@ -71,7 +71,7 @@ impl TorrentRepo {
     pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
         let file = &tokio::fs::read(path).await?;
 
-        match file[..].try_into() {
+        match TorrentRepo::try_from(&file[..]) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(Box::new(e)),
         }
