@@ -31,9 +31,9 @@ pub fn make_torrent_from_bytes(bytes: &[u8]) -> Result<Torrent, ParsingError> {
 }
 
 fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
-    if let Node::Dict(dict, _) = node {
-        if let Some(v) = dict.get(INFO) {
-            if let Node::Dict(_, raw) = node {
+    if let Node::Dict(torrent, _) = node {
+        if let Some(info) = torrent.get(INFO) {
+            if let Node::Dict(_, raw) = info {
                 let mut hasher = Sha1::new();
                 hasher.update(raw);
                 Ok(hasher.finalize().into())

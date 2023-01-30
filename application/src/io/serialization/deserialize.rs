@@ -222,8 +222,8 @@ impl<'a> TryFrom<Node<'a>> for TorrentRepo {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, _) = value {
-            Ok(TorrentRepo { 
-                torrents: required(TORRENTS, &dict)?
+            Ok(TorrentRepo {
+                torrents: required(TORRENTS, &dict)?,
             })
         } else {
             Err(ParsingError::TypeMismatch)

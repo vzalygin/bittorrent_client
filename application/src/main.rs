@@ -1,11 +1,7 @@
 mod common_types;
 mod io;
 
-use common_types::{
-    data::Torrent,
-    error::AsyncErr,
-    files::Files,
-};
+use common_types::{data::Torrent, error::AsyncErr, files::Files};
 use io::serialization::{make_torrent_from_bytes, serialize::SerializeTo};
 
 use tokio::io::AsyncReadExt;
@@ -13,7 +9,7 @@ use tokio::{fs::File, io::AsyncWriteExt};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
-    let path = "./temp.torrent";
+    let path = "./1.torrent";
 
     let mut f = File::open(path).await?;
     let mut buf: Vec<u8> = vec![];

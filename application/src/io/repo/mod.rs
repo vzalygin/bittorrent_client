@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::common_types::{data::Torrent, error::AsyncErr};
 
-use super::serialization::deserialize_torrent_repo;
+use super::serialization::{deserialize_torrent_repo, serialize::SerializeTo};
 
 pub type Id = Uuid;
 
@@ -23,6 +23,27 @@ pub struct TorrentRepo {
 }
 
 impl TorrentRepo {
+    pub fn empty() -> TorrentRepo {
+        TorrentRepo { torrents: vec![] }
+    }
+
+    pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
+        let file = &tokio::fs::read(path).await?;
+
+        match deserialize_torrent_repo(&file[..]) {
+            Ok(repo) => Ok(repo),
+            Err(e) => Err(Box::new(e)),
+        }
+    }
+
+    pub async fn save_to(&self, path: &Path) -> Result<(), AsyncErr> {
+        if let Err(e) = tokio::fs::write(path, self.serialize()).await {
+            Err(Box::new(e))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn get_torrent_list(&self) -> &Vec<WithId<Torrent>> {
         &self.torrents
     }
@@ -63,19 +84,6 @@ impl TorrentRepo {
             true
         } else {
             false
-        }
-    }
-
-    pub async fn save_to(&self, path: &Path) -> Result<(), AsyncErr> {
-        unimplemented!()
-    }
-
-    pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
-        let file = &tokio::fs::read(path).await?;
-
-        match deserialize_torrent_repo(&file[..]) {
-            Ok(repo) => Ok(repo),
-            Err(e) => Err(Box::new(e)),
         }
     }
 }
