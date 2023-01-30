@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{
     common_types::{
         data::Torrent,
@@ -156,7 +158,7 @@ impl SerializeTo<Vec<u8>> for Id {
 
 impl<T> SerializeTo<Vec<u8>> for WithId<T>
 where
-    T: SerializeTo<Vec<u8>> + Clone,
+    T: SerializeTo<Vec<u8>> + Clone + PartialEq + Debug,
 {
     fn serialize_to(&self) -> Vec<u8> {
         let e = self.clone();

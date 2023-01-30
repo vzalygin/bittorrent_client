@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, fmt::Debug};
 
 use uuid::Uuid;
 
@@ -6,16 +6,16 @@ use crate::common_types::{data::Torrent, error::AsyncErr};
 
 pub type Id = Uuid;
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WithId<T>
 where
-    T: Clone,
+    T: Clone + PartialEq + Debug,
 {
     pub id: Id,
     pub value: T,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TorrentRepo {
     torrents: Vec<WithId<Torrent>>,
 }

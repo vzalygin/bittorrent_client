@@ -1,4 +1,8 @@
-use super::{node::Node, parsing::parse_node};
+use uuid::Uuid;
+
+use crate::{common_types::{data::Torrent, files::{TorrentFile, Info, Files, SingleFileMode}}, io::repo::{TorrentRepo, WithId}};
+
+use super::{node::Node, parsing::parse_node, serialize::SerializeTo, error::ParsingError};
 
 #[test]
 fn parse_a_pos_num() {
@@ -137,4 +141,48 @@ fn parse_empty_dict() {
         assert!(false)
     }
     assert_eq!(b"lol", next);
+}
+
+fn generate_repo_object() -> TorrentRepo{
+    TorrentRepo::from(vec![WithId { 
+            id: Uuid::new_v4(), 
+            value: Torrent {
+                data: TorrentFile {
+                    info: Info {
+                        piece_length: 256,
+                        pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
+                        private: Some(1),
+                        files: Files::Single(SingleFileMode { 
+                            name: "1".to_string(), 
+                            length: 16, 
+                            md5sum: None, 
+                        }),
+                        hash: *b"12345678901234567890",
+                    },
+                    announce: "TEST".to_string(),
+                    encoding: None,
+                    httpseeds: None,
+                    announce_list: Some(vec![vec!["TEST1".to_string(), "TEST2".to_string()]]),
+                    creation_date: Some(123),
+                    comment: Some("FOOBAR".to_string()),
+                    created_by: Some("Zalygin".to_string()),
+                },
+            }, 
+        }]
+    )
+}
+
+#[test]
+fn serialize_single_file_torrent() {
+    let repo = generate_repo_object();
+
+    let bytes = &repo.serialize_to()[..];
+    let new_repo = TorrentRepo::try_from(bytes);
+
+    if let Err(e) = &new_repo {
+        println!("{:?}", e);
+    }
+    assert!(new_repo.is_ok());
+    let new_repo = new_repo.unwrap();
+    assert_eq!(repo, new_repo);
 }

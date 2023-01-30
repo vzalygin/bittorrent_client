@@ -18,7 +18,7 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent: TorrentFile = buf[..].try_into()?;
+    let torrent = TorrentFile::try_from(&buf[..])?;
     render_torrent(&torrent);
     Ok(())
 }

@@ -1,6 +1,6 @@
 use super::files::TorrentFile;
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Torrent {
     pub data: TorrentFile,
 }

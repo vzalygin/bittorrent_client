@@ -1,4 +1,4 @@
-use std::{collections::HashMap, vec};
+use std::{collections::HashMap, vec, fmt::Debug};
 
 use sha1::{Digest, Sha1};
 
@@ -177,7 +177,7 @@ impl<'a> TryFrom<Node<'a>> for Torrent {
 
 impl<'a, T> TryFrom<Node<'a>> for WithId<T>
 where
-    T: TryFrom<Node<'a>, Error = ParsingError> + Clone,
+    T: TryFrom<Node<'a>, Error = ParsingError> + Clone + PartialEq + Debug,
 {
     type Error = ParsingError;
 
