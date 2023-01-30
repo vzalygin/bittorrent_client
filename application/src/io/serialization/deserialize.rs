@@ -102,9 +102,6 @@ impl<'a> TryFrom<Node<'a>> for Info {
 
     fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
         if let Node::Dict(dict, raw) = value {
-            // let mut hasher = Sha1::new();
-            // hasher.update(raw);
-
             let files = {
                 let single =
                     dict.contains_key(NAME as &[u8]) && dict.contains_key(b"length" as &[u8]);
@@ -132,7 +129,6 @@ impl<'a> TryFrom<Node<'a>> for Info {
                 pieces: required(PIECES, &dict)?,
                 private: optional(PRIVATE, &dict)?,
                 files,
-                // hash: hasher.finalize().into(),
             })
         } else {
             Err(ParsingError::TypeMismatch)

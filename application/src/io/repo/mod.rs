@@ -4,6 +4,8 @@ use uuid::Uuid;
 
 use crate::common_types::{data::Torrent, error::AsyncErr};
 
+use super::serialization::deserialize_torrent_repo;
+
 pub type Id = Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -71,7 +73,7 @@ impl TorrentRepo {
     pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
         let file = &tokio::fs::read(path).await?;
 
-        match TorrentRepo::try_from(&file[..]) {
+        match deserialize_torrent_repo(&file[..]) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(Box::new(e)),
         }

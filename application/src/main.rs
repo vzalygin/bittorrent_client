@@ -3,9 +3,9 @@ mod io;
 
 use common_types::{
     error::AsyncErr,
-    files::{Files, TorrentFile},
+    files::{Files, TorrentFile}, data::Torrent,
 };
-use io::serialization::serialize::SerializeTo;
+use io::serialization::{serialize::SerializeTo, make_torrent_from_bytes};
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -19,7 +19,7 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent = TorrentFile::try_from(&buf[..])?;
+    let torrent = make_torrent_from_bytes(&buf[..])?;
     render_torrent(&torrent);
 
     let e = torrent.serialize();
@@ -29,7 +29,8 @@ async fn main() -> Result<(), AsyncErr> {
     Ok(())
 }
 
-fn render_torrent(torrent: &TorrentFile) {
+fn render_torrent(torrent: &Torrent) {
+    let torrent = &torrent.data;
     if let Files::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
         for f in &e.files {
@@ -55,5 +56,4 @@ fn render_torrent(torrent: &TorrentFile) {
     println!("encoding:\t{:?}", torrent.encoding);
     println!("piece length:\t{:?}", torrent.info.piece_length);
     println!("private:\t{:?}", torrent.info.private);
-    println!("hash:\t{:?}", torrent.info.hash);
 }

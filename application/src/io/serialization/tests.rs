@@ -7,7 +7,7 @@ use crate::{
         data::Torrent,
         files::{File, Files, Info, SingleFileMode, TorrentFile},
     },
-    io::repo::{TorrentRepo, WithId},
+    io::{repo::{TorrentRepo, WithId}, serialization::deserialize_torrent_repo},
 };
 
 use super::{node::Node, parsing::parse_node, serialize::SerializeTo};
@@ -220,7 +220,6 @@ fn generate_repo_object() -> TorrentRepo {
                         length: 16,
                         md5sum: None,
                     }),
-                    hash: *b"12345678901234567890",
                 },
                 announce: "TEST".to_string(),
                 encoding: None,
@@ -240,7 +239,7 @@ fn serialize_single_file_torrent() {
     let repo = generate_repo_object();
 
     let bytes = &repo.serialize()[..];
-    let new_repo = TorrentRepo::try_from(bytes);
+    let new_repo = deserialize_torrent_repo(bytes);
 
     if let Err(e) = &new_repo {
         println!("{:?}", e);
