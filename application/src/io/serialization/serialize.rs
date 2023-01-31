@@ -8,99 +8,14 @@ use crate::{
     io::repo::{Id, TorrentRepo, WithId},
 };
 
-use super::consts::{
-    ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES, HASH,
-    HTTPSEEDS, ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS,
-    VALUE,
+use super::{
+    super::consts::{
+        ANNOUNCE, ANNOUNCE_LIST, COMMENT, CREATED_BY, CREATION_DATE, DATA, ENCODING, FILES, HASH,
+        HTTPSEEDS, ID, INFO, LENGTH, MD5SUM, NAME, PATH, PIECES, PIECE_LENGTH, PRIVATE, TORRENTS,
+        VALUE,
+    },
+    types::{BencodeDictBuilder, SerializeTo},
 };
-
-pub trait SerializeTo<T> {
-    fn serialize(&self) -> T;
-}
-
-struct BencodeDictBuilder {
-    data: Vec<u8>,
-}
-
-impl BencodeDictBuilder {
-    fn new() -> BencodeDictBuilder {
-        BencodeDictBuilder { data: vec![b'd'] }
-    }
-
-    fn required<T>(self, k: &[u8], v: T) -> BencodeDictBuilder
-    where
-        T: SerializeTo<Vec<u8>>,
-    {
-        let mut data = self.data;
-        data.extend(k.to_vec().serialize());
-        data.extend(v.serialize().into_iter());
-        BencodeDictBuilder { data }
-    }
-
-    fn optional<T>(self, k: &[u8], v: Option<T>) -> BencodeDictBuilder
-    where
-        T: SerializeTo<Vec<u8>>,
-    {
-        if let Some(v) = v {
-            self.required(k, v)
-        } else {
-            self
-        }
-    }
-
-    fn fin(self) -> Vec<u8> {
-        let mut data = self.data;
-        data.push(b'e');
-        data
-    }
-}
-
-impl SerializeTo<Vec<u8>> for u64 {
-    fn serialize(&self) -> Vec<u8> {
-        let value = self.to_string();
-
-        let mut res = vec![b'i'];
-        res.extend_from_slice(value.as_bytes());
-        res.push(b'e');
-        res
-    }
-}
-
-impl SerializeTo<Vec<u8>> for Vec<u8> {
-    fn serialize(&self) -> Vec<u8> {
-        let mut res = vec![];
-        let len = self.len().to_string();
-
-        res.extend_from_slice(len.as_bytes());
-        res.push(b':');
-        res.extend(self);
-
-        res
-    }
-}
-
-impl SerializeTo<Vec<u8>> for String {
-    fn serialize(&self) -> Vec<u8> {
-        self.as_bytes().to_vec().serialize()
-    }
-}
-
-impl<T> SerializeTo<Vec<u8>> for Vec<T>
-where
-    T: SerializeTo<Vec<u8>>,
-{
-    fn serialize(&self) -> Vec<u8> {
-        let mut res = vec![];
-
-        res.push(b'l');
-        for t in self.into_iter() {
-            res.extend(t.serialize());
-        }
-        res.push(b'e');
-
-        res
-    }
-}
 
 impl SerializeTo<Vec<u8>> for File {
     fn serialize(&self) -> Vec<u8> {

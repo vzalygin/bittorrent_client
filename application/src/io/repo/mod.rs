@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::common_types::{data::Torrent, error::AsyncErr};
 
-use super::serialization::{deserialize_torrent_repo, serialize::SerializeTo};
+use super::{deserialization::deserialize_torrent_repo, serialization::types::SerializeTo};
 
 pub type Id = Uuid;
 
