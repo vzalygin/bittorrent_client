@@ -1,9 +1,8 @@
 use uuid::Uuid;
 
 use crate::{
-    common_types::{
-        data::Torrent,
-        metadata::{FileMetadata, FilesMetadata, Info, SingleFileMode, TorrentMetadata},
+    common_types::data::{
+        FileMetadata, FilesMetadata, Info, SingleFileMode, Torrent, TorrentMetadata,
     },
     io::{
         deserialization::{deserialize_torrent_repo, parse_node},
