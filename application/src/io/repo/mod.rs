@@ -2,9 +2,14 @@ use std::{fmt::Debug, path::Path};
 
 use uuid::Uuid;
 
-use crate::common_types::{data::Torrent, error::AsyncErr};
-
-use super::{deserialization::deserialize_torrent_repo, serialization::types::SerializeTo};
+use crate::{
+    common_types::{data::Torrent, error::AsyncErr},
+    io::{
+        consts::*,
+        deserialization::deserialize_torrent_repo,
+        serialization::{BencodeDictBuilder, SerializeTo},
+    },
+};
 
 pub type Id = Uuid;
 
@@ -17,9 +22,36 @@ where
     pub value: T,
 }
 
+impl SerializeTo<Vec<u8>> for Id {
+    fn serialize(&self) -> Vec<u8> {
+        self.as_bytes().to_vec().serialize()
+    }
+}
+
+impl<T> SerializeTo<Vec<u8>> for WithId<T>
+where
+    T: SerializeTo<Vec<u8>> + Clone + PartialEq + Debug,
+{
+    fn serialize(&self) -> Vec<u8> {
+        let e = self.clone();
+        BencodeDictBuilder::new()
+            .required(VALUE, e.value)
+            .required(ID, e.id)
+            .fin()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TorrentRepo {
     pub torrents: Vec<WithId<Torrent>>,
+}
+
+impl SerializeTo<Vec<u8>> for TorrentRepo {
+    fn serialize(&self) -> Vec<u8> {
+        BencodeDictBuilder::new()
+            .required(TORRENTS, self.get_torrent_list().clone())
+            .fin()
+    }
 }
 
 impl TorrentRepo {

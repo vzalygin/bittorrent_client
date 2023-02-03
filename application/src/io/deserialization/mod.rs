@@ -3,17 +3,19 @@ pub mod error;
 mod deserialize;
 mod parsing;
 mod primitives;
+mod util;
 
 #[cfg(test)]
 mod tests;
 
-use self::parsing::Node;
-use crate::common_types::{data::Torrent, files::TorrentFile};
-use error::ParsingError;
 pub use parsing::parse_node;
+pub use util::{Node, optional, required};
+
 use sha1::{Digest, Sha1};
 
 use super::{consts::INFO, repo::TorrentRepo};
+use crate::common_types::{data::Torrent, metadata::TorrentMetadata};
+use error::ParsingError;
 
 pub fn make_torrent_from_bytes(bytes: &[u8]) -> Result<Torrent, ParsingError> {
     let node = parse_node(bytes);
@@ -21,8 +23,18 @@ pub fn make_torrent_from_bytes(bytes: &[u8]) -> Result<Torrent, ParsingError> {
     if let Ok((_, node)) = node {
         Ok(Torrent {
             hash: get_info_hash(&node)?,
-            data: TorrentFile::try_from(node)?,
+            data: TorrentMetadata::try_from(node)?,
         })
+    } else {
+        Err(ParsingError::InvalidFormat)
+    }
+}
+
+pub fn deserialize_torrent_repo(bytes: &[u8]) -> Result<TorrentRepo, ParsingError> {
+    let node = parse_node(bytes);
+
+    if let Ok((_, node)) = node {
+        TorrentRepo::try_from(node)
     } else {
         Err(ParsingError::InvalidFormat)
     }
@@ -39,14 +51,4 @@ fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
         }
     }
     return Err(ParsingError::InvalidFormat);
-}
-
-pub fn deserialize_torrent_repo(bytes: &[u8]) -> Result<TorrentRepo, ParsingError> {
-    let node = parse_node(bytes);
-
-    if let Ok((_, node)) = node {
-        TorrentRepo::try_from(node)
-    } else {
-        Err(ParsingError::InvalidFormat)
-    }
 }

@@ -1,7 +1,7 @@
-pub mod serialize;
-
 mod primitives;
-pub mod types;
+mod types;
 
 #[cfg(test)]
 mod tests;
+
+pub use types::{BencodeDictBuilder, SerializeTo};

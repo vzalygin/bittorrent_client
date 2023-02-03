@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     common_types::{
         data::Torrent,
-        files::{File, Files, Info, SingleFileMode, TorrentFile},
+        metadata::{FileMetadata, FilesMetadata, Info, SingleFileMode, TorrentMetadata},
     },
     io::{
         deserialization::{deserialize_torrent_repo, parse_node},
@@ -61,7 +61,7 @@ fn serialize_file() {
     let data: &[u8] = b"d4:pathl5:abobae6:lengthi42ee";
 
     let (_, node) = parse_node(data).unwrap();
-    let file = File::try_from(node).unwrap();
+    let file = FileMetadata::try_from(node).unwrap();
     let new = &file.serialize();
 
     assert_eq!(data, new);
@@ -77,12 +77,12 @@ fn generate_repo_object() -> TorrentRepo {
         torrents: vec![WithId {
             id: Uuid::new_v4(),
             value: Torrent {
-                data: TorrentFile {
+                data: TorrentMetadata {
                     info: Info {
                         piece_length: 256,
                         pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
                         private: Some(1),
-                        files: Files::Single(SingleFileMode {
+                        files: FilesMetadata::Single(SingleFileMode {
                             name: "1".to_string(),
                             length: 16,
                             md5sum: None,

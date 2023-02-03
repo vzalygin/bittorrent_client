@@ -1,5 +1,5 @@
 /// Модуль с имплементациями для примитивных типов.
-use super::{error::ParsingError, parsing::Node};
+use super::{error::ParsingError, util::Node};
 
 impl<'a> TryFrom<Node<'a>> for u64 {
     type Error = ParsingError;

@@ -1,9 +1,9 @@
 mod common_types;
 mod io;
 
-use common_types::{data::Torrent, error::AsyncErr, files::Files};
+use common_types::{data::Torrent, error::AsyncErr, metadata::FilesMetadata};
 use io::deserialization::make_torrent_from_bytes;
-use io::serialization::types::SerializeTo;
+use io::serialization::SerializeTo;
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -29,14 +29,14 @@ async fn main() -> Result<(), AsyncErr> {
 
 fn render_torrent(torrent: &Torrent) {
     let torrent = &torrent.data;
-    if let Files::Multiple(e) = &torrent.info.files {
+    if let FilesMetadata::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
         for f in &e.files {
             println!("file path:\t{:?}", f.path);
             println!("file length:\t{}", f.length);
             println!("file md5sum:\t{:?}", f.md5sum);
         }
-    } else if let Files::Single(e) = &torrent.info.files {
+    } else if let FilesMetadata::Single(e) = &torrent.info.files {
         println!("file path:\t{:?}", e.name);
         println!("file length:\t{}", e.length);
         println!("file md5sum:\t{:?}", e.md5sum);
