@@ -1,14 +1,14 @@
 mod common_types;
 mod io;
 
-use common_types::{data::Torrent, error::AsyncErr};
-use io::deserialization::make_torrent_from_bytes;
-use io::serialization::SerializeTo;
+use common_types::{data::{FilesMetadata, Torrent}, error::AsyncErr};
+use io::{
+    deserialization::make_torrent_from_bytes, 
+    serialization::SerializeTo
+};
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
-
-use crate::common_types::data::FilesMetadata;
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
