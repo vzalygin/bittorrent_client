@@ -1,6 +1,4 @@
-pub mod error;
-
-mod deserialize;
+mod error;
 mod parsing;
 mod primitives;
 mod util;
@@ -8,14 +6,14 @@ mod util;
 #[cfg(test)]
 mod tests;
 
+pub use error::ParsingError;
 pub use parsing::parse_node;
-pub use util::{Node, optional, required};
+pub use util::{optional, required, Node};
 
 use sha1::{Digest, Sha1};
 
 use super::{consts::INFO, repo::TorrentRepo};
 use crate::common_types::{data::Torrent, metadata::TorrentMetadata};
-use error::ParsingError;
 
 pub fn make_torrent_from_bytes(bytes: &[u8]) -> Result<Torrent, ParsingError> {
     let node = parse_node(bytes);

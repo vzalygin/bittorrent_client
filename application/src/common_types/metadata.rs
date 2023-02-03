@@ -1,12 +1,7 @@
 use crate::{
     io::consts::*,
+    io::deserialization::{optional, required, Node, ParsingError},
     io::serialization::{BencodeDictBuilder, SerializeTo},
-    io::deserialization::{
-        Node, 
-        required, 
-        optional,
-        error::ParsingError
-    },
 };
 
 #[derive(Debug, Clone, PartialEq)]

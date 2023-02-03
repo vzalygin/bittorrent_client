@@ -6,12 +6,36 @@ use crate::{
     common_types::{data::Torrent, error::AsyncErr},
     io::{
         consts::*,
-        deserialization::deserialize_torrent_repo,
+        deserialization::{deserialize_torrent_repo, required, Node, ParsingError},
         serialization::{BencodeDictBuilder, SerializeTo},
     },
 };
 
 pub type Id = Uuid;
+
+impl SerializeTo<Vec<u8>> for Id {
+    fn serialize(&self) -> Vec<u8> {
+        self.as_bytes().to_vec().serialize()
+    }
+}
+
+impl<'a> TryFrom<Node<'a>> for Id {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::String(s) = value {
+            if s.len() == 16 {
+                let s = s[0..16].to_vec();
+
+                Ok(Id::from_bytes(s.try_into().unwrap()))
+            } else {
+                Err(ParsingError::InvalidFormat)
+            }
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct WithId<T>
@@ -20,12 +44,6 @@ where
 {
     pub id: Id,
     pub value: T,
-}
-
-impl SerializeTo<Vec<u8>> for Id {
-    fn serialize(&self) -> Vec<u8> {
-        self.as_bytes().to_vec().serialize()
-    }
 }
 
 impl<T> SerializeTo<Vec<u8>> for WithId<T>
@@ -38,6 +56,35 @@ where
             .required(VALUE, e.value)
             .required(ID, e.id)
             .fin()
+    }
+}
+
+impl<'a, T> TryFrom<Node<'a>> for WithId<T>
+where
+    T: TryFrom<Node<'a>, Error = ParsingError> + Clone + PartialEq + Debug,
+{
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
+            let value: T = {
+                // По неясным причинам борроу чекер не вывозит проверку без инлайна
+                let key: &[u8] = VALUE;
+                let dict = &dict;
+                if let Some(node) = dict.get(key) {
+                    node.clone().try_into()
+                } else {
+                    Err(ParsingError::MissingField(
+                        String::from_utf8(key.to_vec()).unwrap(),
+                    ))
+                }
+            }?;
+            let id: Id = required(ID, &dict)?;
+
+            Ok(WithId { value, id })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
     }
 }
 
@@ -116,6 +163,20 @@ impl TorrentRepo {
             true
         } else {
             false
+        }
+    }
+}
+
+impl<'a> TryFrom<Node<'a>> for TorrentRepo {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, _) = value {
+            Ok(TorrentRepo {
+                torrents: required(TORRENTS, &dict)?,
+            })
+        } else {
+            Err(ParsingError::TypeMismatch)
         }
     }
 }
