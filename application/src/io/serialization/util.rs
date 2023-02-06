@@ -1,5 +1,5 @@
-pub trait SerializeTo<T> {
-    fn serialize(&self) -> T;
+pub trait Serialize {
+    fn serialize(&self) -> Vec<u8>;
 }
 
 pub struct BencodeDictBuilder {
@@ -13,7 +13,7 @@ impl BencodeDictBuilder {
 
     pub fn required<T>(self, k: &[u8], v: T) -> BencodeDictBuilder
     where
-        T: SerializeTo<Vec<u8>>,
+        T: Serialize,
     {
         let mut data = self.data;
         data.extend(k.to_vec().serialize());
@@ -23,7 +23,7 @@ impl BencodeDictBuilder {
 
     pub fn optional<T>(self, k: &[u8], v: Option<T>) -> BencodeDictBuilder
     where
-        T: SerializeTo<Vec<u8>>,
+        T: Serialize,
     {
         if let Some(v) = v {
             self.required(k, v)

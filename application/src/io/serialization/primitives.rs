@@ -1,6 +1,6 @@
-use super::SerializeTo;
+use super::Serialize;
 
-impl SerializeTo<Vec<u8>> for u64 {
+impl Serialize for u64 {
     fn serialize(&self) -> Vec<u8> {
         let value = self.to_string();
 
@@ -11,7 +11,7 @@ impl SerializeTo<Vec<u8>> for u64 {
     }
 }
 
-impl SerializeTo<Vec<u8>> for Vec<u8> {
+impl Serialize for Vec<u8> {
     fn serialize(&self) -> Vec<u8> {
         let mut res = vec![];
         let len = self.len().to_string();
@@ -24,15 +24,15 @@ impl SerializeTo<Vec<u8>> for Vec<u8> {
     }
 }
 
-impl SerializeTo<Vec<u8>> for String {
+impl Serialize for String {
     fn serialize(&self) -> Vec<u8> {
         self.as_bytes().to_vec().serialize()
     }
 }
 
-impl<T> SerializeTo<Vec<u8>> for Vec<T>
+impl<T> Serialize for Vec<T>
 where
-    T: SerializeTo<Vec<u8>>,
+    T: Serialize,
 {
     fn serialize(&self) -> Vec<u8> {
         let mut res = vec![];

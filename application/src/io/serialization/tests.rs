@@ -1,9 +1,9 @@
 use uuid::Uuid;
 
 use crate::{
-    io::{deserialization::TryDeserialize, serialization::SerializeTo},
+    io::{deserialization::TryDeserialize, serialization::Serialize},
     repository::{
-        data::{FileMetadata, FilesMetadata, Info, SingleFileMode, Torrent, TorrentMetadata},
+        types::{FileMetadata, FilesMetadata, Info, SingleFileMode, Torrent, TorrentMetadata},
         TorrentRepo, WithId,
     },
 };

@@ -3,7 +3,7 @@ use sha1::{Digest, Sha1};
 use crate::io::{
     consts::*,
     deserialization::{optional, parse_node, required, Node, ParsingError, TryDeserialize},
-    serialization::{BencodeDictBuilder, SerializeTo},
+    serialization::{BencodeDictBuilder, Serialize},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,7 +32,7 @@ pub enum FilesMetadata {
     Multiple(MultipleFileMode),
 }
 
-impl SerializeTo<Vec<u8>> for FileMetadata {
+impl Serialize for FileMetadata {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(PATH, self.path.clone())
@@ -64,7 +64,7 @@ pub struct Info {
     pub files: FilesMetadata,
 }
 
-impl SerializeTo<Vec<u8>> for Info {
+impl Serialize for Info {
     fn serialize(&self) -> Vec<u8> {
         match &self.files {
             FilesMetadata::Single(file) => BencodeDictBuilder::new()
@@ -129,7 +129,7 @@ pub struct TorrentMetadata {
     pub created_by: Option<String>,
 }
 
-impl SerializeTo<Vec<u8>> for TorrentMetadata {
+impl Serialize for TorrentMetadata {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(INFO, self.info.clone())
@@ -169,7 +169,7 @@ pub struct Torrent {
     pub hash: [u8; 20],
 }
 
-impl SerializeTo<Vec<u8>> for Torrent {
+impl Serialize for Torrent {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(DATA, self.data.clone())

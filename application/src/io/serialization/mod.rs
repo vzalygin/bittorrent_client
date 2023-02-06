@@ -4,4 +4,4 @@ mod util;
 #[cfg(test)]
 mod tests;
 
-pub use util::{BencodeDictBuilder, SerializeTo};
+pub use util::{BencodeDictBuilder, Serialize};

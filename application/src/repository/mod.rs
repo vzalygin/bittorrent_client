@@ -1,4 +1,4 @@
-pub mod data;
+pub mod types;
 
 use std::{fmt::Debug, path::Path};
 use uuid::Uuid;
@@ -8,14 +8,14 @@ use crate::{
     io::{
         consts::*,
         deserialization::{required, Node, ParsingError, TryDeserialize},
-        serialization::{BencodeDictBuilder, SerializeTo},
+        serialization::{BencodeDictBuilder, Serialize},
     },
-    repository::data::Torrent,
+    repository::types::Torrent,
 };
 
 pub type Id = Uuid;
 
-impl SerializeTo<Vec<u8>> for Id {
+impl Serialize for Id {
     fn serialize(&self) -> Vec<u8> {
         self.as_bytes().to_vec().serialize()
     }
@@ -46,9 +46,9 @@ where
     pub value: T,
 }
 
-impl<T> SerializeTo<Vec<u8>> for WithId<T>
+impl<T> Serialize for WithId<T>
 where
-    T: SerializeTo<Vec<u8>> + Clone + PartialEq + Debug,
+    T: Serialize + Clone + PartialEq + Debug,
 {
     fn serialize(&self) -> Vec<u8> {
         let e = self.clone();
@@ -90,7 +90,7 @@ pub struct TorrentRepo {
     pub torrents: Vec<WithId<Torrent>>,
 }
 
-impl SerializeTo<Vec<u8>> for TorrentRepo {
+impl Serialize for TorrentRepo {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
             .required(TORRENTS, self.get_torrent_list().clone())

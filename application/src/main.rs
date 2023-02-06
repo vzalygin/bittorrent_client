@@ -1,13 +1,15 @@
 mod error;
 mod io;
 mod repository;
+mod network;
+mod core;
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 use error::AsyncErr;
-use io::{deserialization::TryDeserialize, serialization::SerializeTo};
-use repository::data::{FilesMetadata, Torrent};
+use io::{deserialization::TryDeserialize, serialization::Serialize};
+use repository::types::{FilesMetadata, Torrent};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
