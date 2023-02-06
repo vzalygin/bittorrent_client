@@ -1,23 +1,22 @@
 /// Модуль с имплементациями для примитивных типов.
-use super::{error::ParsingError, util::Node};
+use super::{
+    error::ParsingError,
+    util::{Node, TryDeserialize},
+};
 
-impl<'a> TryFrom<Node<'a>> for u64 {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::UnsignedNum(i) = value {
-            Ok(i as u64)
+impl<'a> TryDeserialize<'a> for u64 {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::UnsignedNum(num) = node {
+            Ok(num)
         } else {
             Err(ParsingError::TypeMismatch)
         }
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for Vec<u8> {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::String(s) = value {
+impl<'a> TryDeserialize<'a> for Vec<u8> {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::String(s) = node {
             Ok(s.to_vec())
         } else {
             Err(ParsingError::TypeMismatch)
@@ -25,11 +24,9 @@ impl<'a> TryFrom<Node<'a>> for Vec<u8> {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for String {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::String(s) = value {
+impl<'a> TryDeserialize<'a> for String {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::String(s) = node {
             let s = String::from_utf8(s.to_vec());
             if let Ok(s) = s {
                 Ok(s)
@@ -42,17 +39,15 @@ impl<'a> TryFrom<Node<'a>> for String {
     }
 }
 
-impl<'a, T> TryFrom<Node<'a>> for Vec<T>
+impl<'a, T> TryDeserialize<'a> for Vec<T>
 where
-    T: TryFrom<Node<'a>, Error = ParsingError>,
+    T: TryDeserialize<'a>,
 {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::List(list) = value {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::List(list) = node {
             let mut new_list: Vec<T> = vec![];
             for node in list {
-                new_list.push(node.try_into()?);
+                new_list.push(T::try_deserialize_from_node(node.clone())?);
             }
             Ok(new_list)
         } else {

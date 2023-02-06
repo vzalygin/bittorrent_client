@@ -1,6 +1,8 @@
+use sha1::{Digest, Sha1};
+
 use crate::io::{
     consts::*,
-    deserialization::{optional, required, Node, ParsingError},
+    deserialization::{optional, parse_node, required, Node, ParsingError, TryDeserialize},
     serialization::{BencodeDictBuilder, SerializeTo},
 };
 
@@ -40,11 +42,9 @@ impl SerializeTo<Vec<u8>> for FileMetadata {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for FileMetadata {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
+impl<'a> TryDeserialize<'a> for FileMetadata {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
             Ok(FileMetadata {
                 path: required(PATH, &dict)?,
                 length: required(LENGTH, &dict)?,
@@ -82,11 +82,9 @@ impl SerializeTo<Vec<u8>> for Info {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for Info {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
+impl<'a> TryDeserialize<'a> for Info {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
             let files = {
                 let single = dict.contains_key(b"length" as &[u8]);
                 let multi = dict.contains_key(b"files" as &[u8]);
@@ -146,11 +144,9 @@ impl SerializeTo<Vec<u8>> for TorrentMetadata {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for TorrentMetadata {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
+impl<'a> TryDeserialize<'a> for TorrentMetadata {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
             Ok(TorrentMetadata {
                 info: required(INFO, &dict)?,
                 announce: required(ANNOUNCE, &dict)?,
@@ -182,11 +178,9 @@ impl SerializeTo<Vec<u8>> for Torrent {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for Torrent {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
+impl<'a> TryDeserialize<'a> for Torrent {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
             let hash: Vec<u8> = required(HASH, &dict)?; // Копилятор без подсказки не смог в двойной вывод типов.
 
             Ok(Torrent {
@@ -197,4 +191,30 @@ impl<'a> TryFrom<Node<'a>> for Torrent {
             Err(ParsingError::TypeMismatch)
         }
     }
+
+    fn try_deserialize(bytes: &'a [u8]) -> Result<Self, ParsingError> {
+        let node = parse_node(bytes);
+
+        if let Ok((_, node)) = node {
+            Ok(Torrent {
+                hash: get_info_hash(&node)?,
+                data: TorrentMetadata::try_deserialize_from_node(node)?,
+            })
+        } else {
+            Err(ParsingError::InvalidFormat)
+        }
+    }
+}
+
+fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
+    if let Node::Dict(torrent, _) = node {
+        if let Some(info) = torrent.get(INFO) {
+            if let Node::Dict(_, raw) = info {
+                let mut hasher = Sha1::new();
+                hasher.update(raw);
+                return Ok(hasher.finalize().into());
+            }
+        }
+    }
+    return Err(ParsingError::InvalidFormat);
 }

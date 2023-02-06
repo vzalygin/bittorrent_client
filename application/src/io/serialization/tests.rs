@@ -5,9 +5,9 @@ use crate::{
         FileMetadata, FilesMetadata, Info, SingleFileMode, Torrent, TorrentMetadata,
     },
     io::{
-        deserialization::{deserialize_torrent_repo, parse_node},
+        deserialization::{parse_node, TryDeserialize},
         repo::{TorrentRepo, WithId},
-        serialization::types::SerializeTo,
+        serialization::SerializeTo,
     },
 };
 
@@ -15,8 +15,7 @@ use crate::{
 fn serialize_str() {
     let data: &[u8] = b"4:spam";
 
-    let (_, node) = parse_node(data).unwrap();
-    let str = String::try_from(node).unwrap();
+    let str = String::try_deserialize(data).unwrap();
     let new = &str.serialize()[..];
 
     assert_eq!(data, new);
@@ -26,8 +25,7 @@ fn serialize_str() {
 fn serialize_unsigned() {
     let data: &[u8] = b"i42e";
 
-    let (_, node) = parse_node(data).unwrap();
-    let num = u64::try_from(node).unwrap();
+    let num = u64::try_deserialize(data).unwrap();
     let new = &num.serialize();
 
     assert_eq!(data, new);
@@ -37,8 +35,7 @@ fn serialize_unsigned() {
 fn serialize_bytes() {
     let data: &[u8] = b"4:abab";
 
-    let (_, node) = parse_node(data).unwrap();
-    let bytes = Vec::<u8>::try_from(node).unwrap();
+    let bytes = Vec::<u8>::try_deserialize(data).unwrap();
     let new = &bytes.serialize();
 
     assert_eq!(data, new);
@@ -48,8 +45,7 @@ fn serialize_bytes() {
 fn serialize_list() {
     let data: &[u8] = b"li24ei42ee";
 
-    let (_, node) = parse_node(data).unwrap();
-    let list = Vec::<u64>::try_from(node).unwrap();
+    let list = Vec::<u64>::try_deserialize(data).unwrap();
     let new = &list.serialize();
 
     assert_eq!(data, new);
@@ -59,8 +55,7 @@ fn serialize_list() {
 fn serialize_file() {
     let data: &[u8] = b"d4:pathl5:abobae6:lengthi42ee";
 
-    let (_, node) = parse_node(data).unwrap();
-    let file = FileMetadata::try_from(node).unwrap();
+    let file = FileMetadata::try_deserialize(data).unwrap();
     let new = &file.serialize();
 
     assert_eq!(data, new);
@@ -106,7 +101,7 @@ fn serialize_repo() {
     let repo = generate_repo_object();
 
     let bytes = &repo.serialize()[..];
-    let new_repo = deserialize_torrent_repo(bytes);
+    let new_repo = TorrentRepo::try_deserialize(bytes);
 
     if let Err(e) = &new_repo {
         println!("{:?}", e);

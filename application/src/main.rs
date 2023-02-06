@@ -1,11 +1,11 @@
 mod common_types;
 mod io;
 
-use common_types::{data::{FilesMetadata, Torrent}, error::AsyncErr};
-use io::{
-    deserialization::make_torrent_from_bytes, 
-    serialization::SerializeTo
+use common_types::{
+    data::{FilesMetadata, Torrent},
+    error::AsyncErr,
 };
+use io::{deserialization::TryDeserialize, serialization::SerializeTo};
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -19,7 +19,7 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent = make_torrent_from_bytes(&buf[..])?;
+    let torrent = Torrent::try_deserialize(&buf[..])?;
     render_torrent(&torrent);
 
     let e = torrent.serialize();

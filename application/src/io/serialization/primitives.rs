@@ -1,4 +1,4 @@
-use super::types::SerializeTo;
+use super::SerializeTo;
 
 impl SerializeTo<Vec<u8>> for u64 {
     fn serialize(&self) -> Vec<u8> {

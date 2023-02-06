@@ -6,10 +6,12 @@ use crate::{
     common_types::{data::Torrent, error::AsyncErr},
     io::{
         consts::*,
-        deserialization::{deserialize_torrent_repo, required, Node, ParsingError},
+        deserialization::{required, Node, ParsingError},
         serialization::{BencodeDictBuilder, SerializeTo},
     },
 };
+
+use super::deserialization::TryDeserialize;
 
 pub type Id = Uuid;
 
@@ -19,11 +21,9 @@ impl SerializeTo<Vec<u8>> for Id {
     }
 }
 
-impl<'a> TryFrom<Node<'a>> for Id {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::String(s) = value {
+impl<'a> TryDeserialize<'a> for Id {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::String(s) = node {
             if s.len() == 16 {
                 let s = s[0..16].to_vec();
 
@@ -59,29 +59,25 @@ where
     }
 }
 
-impl<'a, T> TryFrom<Node<'a>> for WithId<T>
+impl<'a, T> TryDeserialize<'a> for WithId<T>
 where
-    T: TryFrom<Node<'a>, Error = ParsingError> + Clone + PartialEq + Debug,
+    T: TryDeserialize<'a> + Clone + PartialEq + Debug,
 {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
-            let value: T = {
-                // По неясным причинам борроу чекер не вывозит проверку без инлайна
-                let key: &[u8] = VALUE;
-                let dict = &dict;
-                if let Some(node) = dict.get(key) {
-                    node.clone().try_into()
-                } else {
-                    Err(ParsingError::MissingField(
-                        String::from_utf8(key.to_vec()).unwrap(),
-                    ))
-                }
-            }?;
-            let id: Id = required(ID, &dict)?;
-
-            Ok(WithId { value, id })
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
+            Ok(WithId {
+                value: { // Борроу чекер (или я лол) не вывозит проверку без инлайна
+                    let dict = &dict;
+                    if let Some(node) = dict.get(VALUE) {
+                        T::try_deserialize_from_node(node.clone())
+                    } else {
+                        Err(ParsingError::MissingField(
+                            String::from_utf8(VALUE.to_vec()).unwrap(),
+                        ))
+                    }
+                }?,
+                id: required(ID, &dict)?,
+            })
         } else {
             Err(ParsingError::TypeMismatch)
         }
@@ -101,6 +97,18 @@ impl SerializeTo<Vec<u8>> for TorrentRepo {
     }
 }
 
+impl<'a> TryDeserialize<'a> for TorrentRepo {
+    fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
+        if let Node::Dict(dict, _) = node {
+            Ok(TorrentRepo {
+                torrents: required(TORRENTS, &dict)?,
+            })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
+    }
+}
+
 impl TorrentRepo {
     pub fn empty() -> TorrentRepo {
         TorrentRepo { torrents: vec![] }
@@ -109,7 +117,7 @@ impl TorrentRepo {
     pub async fn load_from(path: &Path) -> Result<TorrentRepo, AsyncErr> {
         let file = &tokio::fs::read(path).await?;
 
-        match deserialize_torrent_repo(&file[..]) {
+        match TorrentRepo::try_deserialize(&file[..]) {
             Ok(repo) => Ok(repo),
             Err(e) => Err(Box::new(e)),
         }
@@ -163,20 +171,6 @@ impl TorrentRepo {
             true
         } else {
             false
-        }
-    }
-}
-
-impl<'a> TryFrom<Node<'a>> for TorrentRepo {
-    type Error = ParsingError;
-
-    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
-        if let Node::Dict(dict, _) = value {
-            Ok(TorrentRepo {
-                torrents: required(TORRENTS, &dict)?,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
         }
     }
 }
