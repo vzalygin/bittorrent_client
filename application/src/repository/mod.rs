@@ -1,17 +1,17 @@
-use std::{fmt::Debug, path::Path};
+pub mod data;
 
+use std::{fmt::Debug, path::Path};
 use uuid::Uuid;
 
 use crate::{
-    common_types::{data::Torrent, error::AsyncErr},
+    error::AsyncErr,
     io::{
         consts::*,
-        deserialization::{required, Node, ParsingError},
+        deserialization::{required, Node, ParsingError, TryDeserialize},
         serialization::{BencodeDictBuilder, SerializeTo},
     },
+    repository::data::Torrent,
 };
-
-use super::deserialization::TryDeserialize;
 
 pub type Id = Uuid;
 
@@ -66,7 +66,8 @@ where
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
         if let Node::Dict(dict, _) = node {
             Ok(WithId {
-                value: { // Борроу чекер (или я лол) не вывозит проверку без инлайна
+                value: {
+                    // Борроу чекер (или я лол) не вывозит проверку без инлайна
                     let dict = &dict;
                     if let Some(node) = dict.get(VALUE) {
                         T::try_deserialize_from_node(node.clone())

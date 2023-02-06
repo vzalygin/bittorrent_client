@@ -1,14 +1,13 @@
-mod common_types;
+mod error;
 mod io;
-
-use common_types::{
-    data::{FilesMetadata, Torrent},
-    error::AsyncErr,
-};
-use io::{deserialization::TryDeserialize, serialization::SerializeTo};
+mod repository;
 
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
+
+use error::AsyncErr;
+use io::{deserialization::TryDeserialize, serialization::SerializeTo};
+use repository::data::{FilesMetadata, Torrent};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
