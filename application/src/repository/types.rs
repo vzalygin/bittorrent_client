@@ -2,7 +2,7 @@ use sha1::{Digest, Sha1};
 
 use crate::io::{
     consts::*,
-    deserialization::{optional, parse_node, required, Node, ParsingError, TryDeserialize},
+    deserialization::{parse_node, DataProvider, Node, ParsingError, TryDeserialize},
     serialization::{BencodeDictBuilder, Serialize},
 };
 
@@ -44,15 +44,12 @@ impl Serialize for FileMetadata {
 
 impl<'a> TryDeserialize<'a> for FileMetadata {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            Ok(FileMetadata {
-                path: required(PATH, &dict)?,
-                length: required(LENGTH, &dict)?,
-                md5sum: optional(MD5SUM, &dict)?,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+        let dp = DataProvider::try_from(node)?;
+        Ok(FileMetadata {
+            path: dp.required(PATH)?,
+            length: dp.required(LENGTH)?,
+            md5sum: dp.optional(MD5SUM)?,
+        })
     }
 }
 
@@ -84,36 +81,34 @@ impl Serialize for Info {
 
 impl<'a> TryDeserialize<'a> for Info {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            let files = {
-                let single = dict.contains_key(b"length" as &[u8]);
-                let multi = dict.contains_key(b"files" as &[u8]);
+        let dp = DataProvider::try_from(node)?;
 
-                if single && !multi {
-                    FilesMetadata::Single(SingleFileMode {
-                        name: required(NAME, &dict)?,
-                        length: required(LENGTH, &dict)?,
-                        md5sum: optional(MD5SUM, &dict)?,
-                    })
-                } else if !single && multi {
-                    FilesMetadata::Multiple(MultipleFileMode {
-                        base_name: required(NAME, &dict)?,
-                        files: required(FILES, &dict)?,
-                    })
-                } else {
-                    return Err(ParsingError::InvalidFormat);
-                }
-            };
+        let files = {
+            let single = dp.optional::<u64>(LENGTH)?.is_some();
+            let multi = dp.optional::<Vec<FileMetadata>>(FILES)?.is_some();
 
-            Ok(Info {
-                piece_length: required(PIECE_LENGTH, &dict)?,
-                pieces: required(PIECES, &dict)?,
-                private: optional(PRIVATE, &dict)?,
-                files,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+            if single && !multi {
+                FilesMetadata::Single(SingleFileMode {
+                    name: dp.required(NAME)?,
+                    length: dp.required(LENGTH)?,
+                    md5sum: dp.optional(MD5SUM)?,
+                })
+            } else if !single && multi {
+                FilesMetadata::Multiple(MultipleFileMode {
+                    base_name: dp.required(NAME)?,
+                    files: dp.required(FILES)?,
+                })
+            } else {
+                return Err(ParsingError::InvalidFormat);
+            }
+        };
+
+        Ok(Info {
+            piece_length: dp.required(PIECE_LENGTH)?,
+            pieces: dp.required(PIECES)?,
+            private: dp.optional(PRIVATE)?,
+            files,
+        })
     }
 }
 
@@ -146,20 +141,17 @@ impl Serialize for TorrentMetadata {
 
 impl<'a> TryDeserialize<'a> for TorrentMetadata {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            Ok(TorrentMetadata {
-                info: required(INFO, &dict)?,
-                announce: required(ANNOUNCE, &dict)?,
-                encoding: optional(ENCODING, &dict)?,
-                httpseeds: optional(HTTPSEEDS, &dict)?,
-                announce_list: optional(ANNOUNCE_LIST, &dict)?,
-                creation_date: optional(CREATION_DATE, &dict)?,
-                comment: optional(COMMENT, &dict)?,
-                created_by: optional(CREATED_BY, &dict)?,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+        let dp = DataProvider::try_from(node)?;
+        Ok(TorrentMetadata {
+            info: dp.required(INFO)?,
+            announce: dp.required(ANNOUNCE)?,
+            encoding: dp.optional(ENCODING)?,
+            httpseeds: dp.optional(HTTPSEEDS)?,
+            announce_list: dp.optional(ANNOUNCE_LIST)?,
+            creation_date: dp.optional(CREATION_DATE)?,
+            comment: dp.optional(COMMENT)?,
+            created_by: dp.optional(CREATED_BY)?,
+        })
     }
 }
 
@@ -180,16 +172,13 @@ impl Serialize for Torrent {
 
 impl<'a> TryDeserialize<'a> for Torrent {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            let hash: Vec<u8> = required(HASH, &dict)?; // Копилятор без подсказки не смог в двойной вывод типов.
+        let dp = DataProvider::try_from(node)?;
 
-            Ok(Torrent {
-                data: required(DATA, &dict)?,
-                hash: hash.try_into().unwrap(),
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+        let hash: Vec<u8> = dp.required(HASH)?; // Копилятор без подсказки не смог в двойной вывод типов.
+        Ok(Torrent {
+            data: dp.required(DATA)?,
+            hash: hash.try_into().unwrap(),
+        })
     }
 
     fn try_deserialize(bytes: &'a [u8]) -> Result<Self, ParsingError> {

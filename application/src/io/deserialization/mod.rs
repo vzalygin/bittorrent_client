@@ -8,4 +8,4 @@ mod tests;
 
 pub use error::ParsingError;
 pub use parsing::parse_node;
-pub use util::{optional, required, Node, TryDeserialize};
+pub use util::{DataProvider, Node, TryDeserialize};

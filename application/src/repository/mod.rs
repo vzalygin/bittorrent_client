@@ -7,7 +7,7 @@ use crate::{
     error::AsyncErr,
     io::{
         consts::*,
-        deserialization::{required, Node, ParsingError, TryDeserialize},
+        deserialization::{DataProvider, Node, ParsingError, TryDeserialize},
         serialization::{BencodeDictBuilder, Serialize},
     },
     repository::types::Torrent,
@@ -64,24 +64,11 @@ where
     T: TryDeserialize<'a> + Clone + PartialEq + Debug,
 {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            Ok(WithId {
-                value: {
-                    // Борроу чекер (или я лол) не вывозит проверку без инлайна
-                    let dict = &dict;
-                    if let Some(node) = dict.get(VALUE) {
-                        T::try_deserialize_from_node(node.clone())
-                    } else {
-                        Err(ParsingError::MissingField(
-                            String::from_utf8(VALUE.to_vec()).unwrap(),
-                        ))
-                    }
-                }?,
-                id: required(ID, &dict)?,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+        let dp = DataProvider::try_from(node)?;
+        Ok(WithId {
+            value: dp.required(VALUE)?,
+            id: dp.required(ID)?,
+        })
     }
 }
 
@@ -100,13 +87,10 @@ impl Serialize for TorrentRepo {
 
 impl<'a> TryDeserialize<'a> for TorrentRepo {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
-        if let Node::Dict(dict, _) = node {
-            Ok(TorrentRepo {
-                torrents: required(TORRENTS, &dict)?,
-            })
-        } else {
-            Err(ParsingError::TypeMismatch)
-        }
+        let dp = DataProvider::try_from(node)?;
+        Ok(TorrentRepo {
+            torrents: dp.required(TORRENTS)?,
+        })
     }
 }
 

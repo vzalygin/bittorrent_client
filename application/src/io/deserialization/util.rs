@@ -25,31 +25,47 @@ where
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError>;
 }
 
-#[inline]
-pub fn required<'a, T>(key: &[u8], dict: &'a HashMap<&[u8], Node<'a>>) -> Result<T, ParsingError>
-where
-    T: TryDeserialize<'a>,
-{
-    if let Some(node) = dict.get(key) {
-        T::try_deserialize_from_node(node.clone())
-    } else {
-        Err(ParsingError::MissingField(
-            String::from_utf8(key.to_vec()).unwrap(),
-        ))
+pub struct DataProvider<'a> {
+    pub dict: HashMap<&'a [u8], Node<'a>>,
+    pub slice: &'a [u8],
+}
+
+impl<'a> TryFrom<Node<'a>> for DataProvider<'a> {
+    type Error = ParsingError;
+
+    fn try_from(value: Node<'a>) -> Result<Self, Self::Error> {
+        if let Node::Dict(dict, slice) = value {
+            Ok(DataProvider { dict, slice })
+        } else {
+            Err(ParsingError::TypeMismatch)
+        }
     }
 }
 
-#[inline]
-pub fn optional<'a, T>(
-    key: &[u8],
-    dict: &'a HashMap<&[u8], Node<'a>>,
-) -> Result<Option<T>, ParsingError>
-where
-    T: TryDeserialize<'a>,
-{
-    if let Some(node) = dict.get(key) {
-        Ok(Some(T::try_deserialize_from_node(node.clone())?))
-    } else {
-        Ok(None)
+impl<'a> DataProvider<'a> {
+    #[inline]
+    pub fn required<T>(&self, key: &[u8]) -> Result<T, ParsingError>
+    where
+        T: TryDeserialize<'a>,
+    {
+        if let Some(node) = self.dict.get(key) {
+            T::try_deserialize_from_node(node.clone())
+        } else {
+            Err(ParsingError::MissingField(
+                String::from_utf8(key.to_vec()).unwrap(),
+            ))
+        }
+    }
+
+    #[inline]
+    pub fn optional<T>(&self, key: &[u8]) -> Result<Option<T>, ParsingError>
+    where
+        T: TryDeserialize<'a>,
+    {
+        if let Some(node) = self.dict.get(key) {
+            Ok(Some(T::try_deserialize_from_node(node.clone())?))
+        } else {
+            Ok(None)
+        }
     }
 }
