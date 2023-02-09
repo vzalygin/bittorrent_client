@@ -2,7 +2,7 @@ use sha1::{Digest, Sha1};
 
 use crate::io::{
     consts::*,
-    deserialization::{parse_node, DataProvider, Node, ParsingError, TryDeserialize},
+    deserialization::{DataProvider, Node, ParsingError, TryDeserialize, parse_node},
     serialization::{BencodeDictBuilder, Serialize},
 };
 
@@ -30,6 +30,19 @@ pub struct MultipleFileMode {
 pub enum FilesMetadata {
     Single(SingleFileMode),
     Multiple(MultipleFileMode),
+}
+
+fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
+    if let Node::Dict(torrent_meta, _) = node {
+        if let Some(info) = torrent_meta.get(INFO) {
+            if let Node::Dict(_, raw) = info {
+                let mut hasher = Sha1::new();
+                hasher.update(raw);
+                return Ok(hasher.finalize().into());
+            }
+        }
+    }
+    return Err(ParsingError::TypeMismatch);
 }
 
 impl Serialize for FileMetadata {
@@ -124,6 +137,19 @@ pub struct TorrentMetadata {
     pub created_by: Option<String>,
 }
 
+impl TorrentMetadata {
+    pub fn new<'a>(bytes: &'a [u8]) -> Result<(TorrentMetadata, [u8; 20]), ParsingError> { // Некий костыль, чтобы считать хеш от этого чуда
+        let node = parse_node(bytes);
+        if let Ok((_, node)) = parse_node(bytes) {
+            let hash = get_info_hash(&node)?;
+            
+            Ok((TorrentMetadata::try_deserialize_from_node(node)?, hash))
+        } else {
+            Err(ParsingError::InvalidFormat)
+        }
+    }
+}
+
 impl Serialize for TorrentMetadata {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
@@ -157,15 +183,31 @@ impl<'a> TryDeserialize<'a> for TorrentMetadata {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Torrent {
-    pub data: TorrentMetadata,
+    pub metadata: TorrentMetadata,
     pub hash: [u8; 20],
+    pub downloaded_pieces: Vec<u8>,
+    pub downloaded: u64,
+}
+
+impl Torrent {
+    pub fn new(metadata: TorrentMetadata, hash: [u8; 20]) -> Torrent {
+        let len =  metadata.info.pieces.len() / (20 * 8) + 1;
+        Torrent {
+            metadata,
+            hash,
+            downloaded_pieces: vec![0; len],
+            downloaded: 0,
+        }
+    }
 }
 
 impl Serialize for Torrent {
     fn serialize(&self) -> Vec<u8> {
         BencodeDictBuilder::new()
-            .required(DATA, self.data.clone())
+            .required(DATA, self.metadata.clone())
             .required(HASH, self.hash.to_vec())
+            .required(DOWNLOADED_PIECES, self.downloaded_pieces.clone())
+            .required(DOWNLOADED, self.downloaded)
             .fin()
     }
 }
@@ -174,36 +216,12 @@ impl<'a> TryDeserialize<'a> for Torrent {
     fn try_deserialize_from_node(node: Node<'a>) -> Result<Self, ParsingError> {
         let dp = DataProvider::try_from(node)?;
 
-        let hash: Vec<u8> = dp.required(HASH)?; // Копилятор без подсказки не смог в двойной вывод типов.
+        let hash: Vec<u8> = dp.required(HASH)?;
         Ok(Torrent {
-            data: dp.required(DATA)?,
+            metadata: dp.required(DATA)?,
+            downloaded_pieces: dp.required(DOWNLOADED_PIECES)?,
+            downloaded: dp.required(DOWNLOADED)?,
             hash: hash.try_into().unwrap(),
         })
     }
-
-    fn try_deserialize(bytes: &'a [u8]) -> Result<Self, ParsingError> {
-        let node = parse_node(bytes);
-
-        if let Ok((_, node)) = node {
-            Ok(Torrent {
-                hash: get_info_hash(&node)?,
-                data: TorrentMetadata::try_deserialize_from_node(node)?,
-            })
-        } else {
-            Err(ParsingError::InvalidFormat)
-        }
-    }
-}
-
-fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
-    if let Node::Dict(torrent, _) = node {
-        if let Some(info) = torrent.get(INFO) {
-            if let Node::Dict(_, raw) = info {
-                let mut hasher = Sha1::new();
-                hasher.update(raw);
-                return Ok(hasher.finalize().into());
-            }
-        }
-    }
-    return Err(ParsingError::InvalidFormat);
 }

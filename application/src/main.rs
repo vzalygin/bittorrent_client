@@ -1,12 +1,17 @@
 mod error;
 mod io;
+mod network;
 mod repository;
+
+#[cfg(test)]
+mod tests;
+
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 use error::AsyncErr;
 use io::{deserialization::TryDeserialize, serialization::Serialize};
-use repository::types::{FilesMetadata, Torrent};
+use repository::types::{FilesMetadata, Torrent, TorrentMetadata};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
@@ -17,7 +22,8 @@ async fn main() -> Result<(), AsyncErr> {
 
     f.read_to_end(&mut buf).await?;
 
-    let torrent = Torrent::try_deserialize(&buf[..])?;
+    let (metadata, hash) = TorrentMetadata::new(&buf[..])?;
+    let torrent = Torrent::new(metadata, hash);
     render_torrent(&torrent);
 
     let e = torrent.serialize();
@@ -28,7 +34,7 @@ async fn main() -> Result<(), AsyncErr> {
 }
 
 fn render_torrent(torrent: &Torrent) {
-    let torrent = &torrent.data;
+    let torrent = &torrent.metadata;
     if let FilesMetadata::Multiple(e) = &torrent.info.files {
         println!("file base:\t{:?}", e.base_name);
         for f in &e.files {

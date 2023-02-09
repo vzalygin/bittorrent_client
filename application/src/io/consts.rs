@@ -24,3 +24,5 @@ pub const VALUE: &[u8] = b"value";
 pub const ID: &[u8] = b"id";
 pub const TORRENTS: &[u8] = b"torrents";
 pub const HASH: &[u8] = b"hash";
+pub const DOWNLOADED: &[u8] = b"downloaded";
+pub const DOWNLOADED_PIECES: &[u8] = b"downloaded_pieces";

@@ -18,7 +18,7 @@ where
     fn try_deserialize(bytes: &'a [u8]) -> Result<Self, ParsingError> {
         match parse_node(bytes) {
             Ok((_, node)) => self::TryDeserialize::try_deserialize_from_node(node),
-            Err(_) => Err(ParsingError::TypeMismatch),
+            Err(_) => Err(ParsingError::InvalidFormat),
         }
     }
 

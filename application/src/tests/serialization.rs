@@ -68,7 +68,7 @@ fn generate_repo_object() -> TorrentRepo {
         torrents: vec![WithId {
             id: Uuid::new_v4(),
             value: Torrent {
-                data: TorrentMetadata {
+                metadata: TorrentMetadata {
                     info: Info {
                         piece_length: 256,
                         pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
@@ -88,6 +88,8 @@ fn generate_repo_object() -> TorrentRepo {
                     created_by: Some("Zalygin".to_string()),
                 },
                 hash: *b"12345678901234567890",
+                downloaded_pieces: vec![6u8, 4u8, 5u8],
+                downloaded: 0
             },
         }],
     }

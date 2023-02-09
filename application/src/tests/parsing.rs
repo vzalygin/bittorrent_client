@@ -1,4 +1,4 @@
-use crate::io::deserialization::{parsing::parse_node, util::Node};
+use crate::io::deserialization::{parse_node, Node};
 
 #[test]
 fn parse_a_pos_num() {
