@@ -139,7 +139,6 @@ pub struct TorrentMetadata {
 
 impl TorrentMetadata {
     pub fn new<'a>(bytes: &'a [u8]) -> Result<(TorrentMetadata, [u8; 20]), ParsingError> { // Некий костыль, чтобы считать хеш от этого чуда
-        let node = parse_node(bytes);
         if let Ok((_, node)) = parse_node(bytes) {
             let hash = get_info_hash(&node)?;
             

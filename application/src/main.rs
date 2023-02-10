@@ -2,15 +2,17 @@ mod error;
 mod io;
 mod network;
 mod repository;
+mod client;
 
 #[cfg(test)]
 mod tests;
 
+use network::{get_start, TorrentState};
 use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 use error::AsyncErr;
-use io::{deserialization::TryDeserialize, serialization::Serialize};
+use io::{serialization::Serialize};
 use repository::types::{FilesMetadata, Torrent, TorrentMetadata};
 
 #[tokio::main]
@@ -24,11 +26,17 @@ async fn main() -> Result<(), AsyncErr> {
 
     let (metadata, hash) = TorrentMetadata::new(&buf[..])?;
     let torrent = Torrent::new(metadata, hash);
-    render_torrent(&torrent);
+    // render_torrent(&torrent);
 
-    let e = torrent.serialize();
-    let mut f1 = File::create("./temp.torrent").await?;
-    f1.write(&e[..]).await?;
+    let client = reqwest::Client::new();
+    let state = TorrentState {
+        torrent,
+        uploaded: 0,
+        downloaded: 0,
+        left: 0,
+    };
+    let res = get_start(client, state).await;
+    println!("{:#?}", res);
 
     Ok(())
 }
