@@ -5,7 +5,7 @@ pub fn assert_eq<T: PartialEq + std::fmt::Debug>(l: T, r: T) -> Result<()> {
         Ok(())
     } else {
         Err(anyhow!(
-            "A left param doesn't equal a right param\n\tA left param: {:#?}\n\tA right param: {:#?}",
+            "FAILED ASSERTION: A left param doesn't equal to a right param.\n\tA left param: {:#?}\n\tA right param: {:#?}",
             l,
             r
         ))
