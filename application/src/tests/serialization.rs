@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     io::{deserialization::TryDeserialize, serialization::Serialize},
     repository::{
-        types::{FileMetadata, FilesMetadata, Info, SingleFileMode, Torrent, TorrentMetadata},
+        types::{FileMetadata, FilesMetadata, Info, Torrent, TorrentMetadata},
         TorrentRepo, WithId,
     },
 };
@@ -73,11 +73,11 @@ fn generate_repo_object() -> TorrentRepo {
                         piece_length: 256,
                         pieces: "QWERTYILKNAWKJN".to_string().as_bytes().to_vec(),
                         private: Some(1),
-                        files: FilesMetadata::Single(SingleFileMode {
+                        files: FilesMetadata::Single {
                             name: "1".to_string(),
                             length: 16,
                             md5sum: None,
-                        }),
+                        },
                     },
                     announce: "TEST".to_string(),
                     encoding: None,
@@ -89,7 +89,7 @@ fn generate_repo_object() -> TorrentRepo {
                 },
                 hash: *b"12345678901234567890",
                 downloaded_pieces: vec![6u8, 4u8, 5u8],
-                downloaded: 0
+                downloaded: 0,
             },
         }],
     }

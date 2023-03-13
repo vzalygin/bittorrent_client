@@ -2,20 +2,13 @@ use sha1::{Digest, Sha1};
 
 use crate::io::{
     consts::*,
-    deserialization::{DataProvider, Node, ParsingError, TryDeserialize, parse_node},
+    deserialization::{parse_node, DataProvider, Node, ParsingError, TryDeserialize},
     serialization::{BencodeDictBuilder, Serialize},
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FileMetadata {
     pub path: Vec<String>,
-    pub length: u64,
-    pub md5sum: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SingleFileMode {
-    pub name: String,
     pub length: u64,
     pub md5sum: Option<String>,
 }
@@ -28,8 +21,15 @@ pub struct MultipleFileMode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FilesMetadata {
-    Single(SingleFileMode),
-    Multiple(MultipleFileMode),
+    Single {
+        name: String,
+        length: u64,
+        md5sum: Option<String>,
+    },
+    Multiple {
+        base_name: String,
+        files: Vec<FileMetadata>,
+    },
 }
 
 fn get_info_hash(node: &Node) -> Result<[u8; 20], ParsingError> {
@@ -77,13 +77,17 @@ pub struct Info {
 impl Serialize for Info {
     fn serialize(&self) -> Vec<u8> {
         match &self.files {
-            FilesMetadata::Single(file) => BencodeDictBuilder::new()
-                .required(NAME, file.name.clone())
-                .required(LENGTH, file.length)
-                .optional(MD5SUM, file.md5sum.clone()),
-            FilesMetadata::Multiple(files) => BencodeDictBuilder::new()
-                .required(NAME, files.base_name.clone())
-                .required(FILES, files.files.clone()),
+            FilesMetadata::Single {
+                name,
+                length,
+                md5sum,
+            } => BencodeDictBuilder::new()
+                .required(NAME, name.clone())
+                .required(LENGTH, *length)
+                .optional(MD5SUM, md5sum.clone()),
+            FilesMetadata::Multiple { base_name, files } => BencodeDictBuilder::new()
+                .required(NAME, base_name.clone())
+                .required(FILES, files.clone()),
         }
         .required(PIECE_LENGTH, self.piece_length)
         .required(PIECES, self.pieces.clone())
@@ -101,16 +105,16 @@ impl<'a> TryDeserialize<'a> for Info {
             let multi = dp.optional::<Vec<FileMetadata>>(FILES)?.is_some();
 
             if single && !multi {
-                FilesMetadata::Single(SingleFileMode {
+                FilesMetadata::Single {
                     name: dp.required(NAME)?,
                     length: dp.required(LENGTH)?,
                     md5sum: dp.optional(MD5SUM)?,
-                })
+                }
             } else if !single && multi {
-                FilesMetadata::Multiple(MultipleFileMode {
+                FilesMetadata::Multiple {
                     base_name: dp.required(NAME)?,
                     files: dp.required(FILES)?,
-                })
+                }
             } else {
                 return Err(ParsingError::InvalidFormat);
             }
@@ -138,10 +142,11 @@ pub struct TorrentMetadata {
 }
 
 impl TorrentMetadata {
-    pub fn new<'a>(bytes: &'a [u8]) -> Result<(TorrentMetadata, [u8; 20]), ParsingError> { // Некий костыль, чтобы считать хеш от этого чуда
+    pub fn new<'a>(bytes: &'a [u8]) -> Result<(TorrentMetadata, [u8; 20]), ParsingError> {
+        // Некий костыль, чтобы считать хеш от этого чуда
         if let Ok((_, node)) = parse_node(bytes) {
             let hash = get_info_hash(&node)?;
-            
+
             Ok((TorrentMetadata::try_deserialize_from_node(node)?, hash))
         } else {
             Err(ParsingError::InvalidFormat)
@@ -184,13 +189,13 @@ impl<'a> TryDeserialize<'a> for TorrentMetadata {
 pub struct Torrent {
     pub metadata: TorrentMetadata,
     pub hash: [u8; 20],
-    pub downloaded_pieces: Vec<u8>,
+    pub downloaded_pieces: Vec<u8>, // 1 бит - 1 скачанный кусок
     pub downloaded: u64,
 }
 
 impl Torrent {
     pub fn new(metadata: TorrentMetadata, hash: [u8; 20]) -> Torrent {
-        let len =  metadata.info.pieces.len() / (20 * 8) + 1;
+        let len = metadata.info.pieces.len() / (20 * 8) + 1;
         Torrent {
             metadata,
             hash,

@@ -1,7 +1,12 @@
+mod tcp;
+
 use base64::{engine::general_purpose::STANDARD, Engine};
 use reqwest::{Client, Response};
 
-use crate::{repository::types::Torrent, client::{PEER_ID, PORT, COMPACT}};
+use crate::{
+    client::{COMPACT, PEER_ID, PORT},
+    repository::types::Torrent,
+};
 
 pub struct TorrentState {
     pub torrent: Torrent,
@@ -10,18 +15,20 @@ pub struct TorrentState {
     pub left: u64,
 }
 
-pub async fn get_start(client: Client, state: TorrentState) -> Response{
+pub async fn get_start(client: Client, state: TorrentState) -> Response {
     let hash = STANDARD.encode(&state.torrent.hash[..]);
-    let url = state.torrent.metadata.announce;
+    let url = &state.torrent.metadata.announce;
     client
         .get(url)
         .header("peer_id", &PEER_ID[..])
         .header("port", PORT)
-        .header("compact", COMPACT as u16) 
-        .header("info_hash", hash) // тут проблема
+        .header("compact", COMPACT as u16)
+        .header("info_hash", hash)
         .header("uploaded", state.uploaded)
         .header("downloaded", state.downloaded)
         .header("left", state.left)
         .header("event", "started")
-        .send().await.unwrap()
+        .send()
+        .await
+        .unwrap()
 }

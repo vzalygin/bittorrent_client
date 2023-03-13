@@ -1,19 +1,20 @@
+mod client;
 mod error;
 mod io;
 mod network;
 mod repository;
-mod client;
 
 #[cfg(test)]
 mod tests;
+mod tools;
 
 use network::{get_start, TorrentState};
+use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use tokio::{fs::File, io::AsyncWriteExt};
 
 use error::AsyncErr;
-use io::{serialization::Serialize};
-use repository::types::{FilesMetadata, Torrent, TorrentMetadata};
+
+use repository::types::{Torrent, TorrentMetadata};
 
 #[tokio::main]
 async fn main() -> Result<(), AsyncErr> {
